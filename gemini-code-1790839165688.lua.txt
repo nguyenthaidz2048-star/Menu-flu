@@ -1,0 +1,396 @@
+-- ============================================================================
+-- AXIOM ENGINE: ULTIMATE GITHUB LOADSTRING HUB v2.7
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+if CoreGui:FindFirstChild("AxiomGithubHub") then
+    CoreGui.AxiomGithubHub:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AxiomGithubHub"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Window (Giao diện bo góc, kính mờ sang trọng)
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+MainFrame.BorderColor3 = Color3.fromRGB(40, 40, 60)
+MainFrame.Position = UDim2.new(0.5, -210, 0.5, -170)
+MainFrame.Size = UDim2.new(0, 420, 0, 340)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local UICornerMain = Instance.new("UICorner")
+UICornerMain.CornerRadius = UDim.new(0, 8)
+UICornerMain.Parent = MainFrame
+
+-- Title Bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+TitleBar.Size = UDim2.new(1, 0, 0, 36)
+
+local UICornerTitle = Instance.new("UICorner")
+UICornerTitle.CornerRadius = UDim.new(0, 8)
+UICornerTitle.Parent = TitleBar
+
+local LogoLabel = Instance.new("TextLabel")
+LogoLabel.Parent = TitleBar
+LogoLabel.BackgroundTransparency = 1
+LogoLabel.Position = UDim2.new(0, 10, 0, 0)
+LogoLabel.Size = UDim2.new(0, 30, 1, 0)
+LogoLabel.Font = Enum.Font.GothamBold
+LogoLabel.Text = "⚡"
+LogoLabel.TextColor3 = Color3.fromRGB(0, 255, 170)
+LogoLabel.TextSize = 14
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Parent = TitleBar
+TitleText.BackgroundTransparency = 1
+TitleText.Position = UDim2.new(0, 40, 0, 0)
+TitleText.Size = UDim2.new(0, 250, 1, 0)
+TitleText.Font = Enum.Font.GothamBold
+TitleText.Text = "AXIOM HUB // GITHUB EDITION"
+TitleText.TextColor3 = Color3.fromRGB(240, 240, 250)
+TitleText.TextSize = 11
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Nút ẩn/hiện UI nhanh
+local IsVisible = true
+local ToggleKeyBtn = Instance.new("TextButton")
+ToggleKeyBtn.Parent = TitleBar
+ToggleKeyBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+ToggleKeyBtn.Position = UDim2.new(1, -72, 0, 6)
+ToggleKeyBtn.Size = UDim2.new(0, 30, 0, 24)
+ToggleKeyBtn.Font = Enum.Font.GothamBold
+ToggleKeyBtn.Text = "UI"
+ToggleKeyBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
+ToggleKeyBtn.TextSize = 10
+Instance.new("UICorner", ToggleKeyBtn).CornerRadius = UDim.new(0, 4)
+
+ToggleKeyBtn.MouseButton1Click:Connect(function()
+    IsVisible = not IsVisible
+    MainFrame.Visible = IsVisible
+end)
+
+-- Nút thu nhỏ menu (-)
+local IsMinimized = false
+local MinBtn = Instance.new("TextButton")
+MinBtn.Parent = TitleBar
+MinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+MinBtn.Position = UDim2.new(1, -36, 0, 6)
+MinBtn.Size = UDim2.new(0, 26, 0, 24)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.Text = "-"
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextSize = 12
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
+
+MinBtn.MouseButton1Click:Connect(function()
+    IsMinimized = not IsMinimized
+    if IsMinimized then
+        MainFrame:TweenSize(UDim2.new(0, 420, 0, 36), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        MinBtn.Text = "+"
+    else
+        MainFrame:TweenSize(UDim2.new(0, 420, 0, 340), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        MinBtn.Text = "-"
+    end
+end)
+
+-- Tab Bar (Thanh chuyển mục)
+local TabBar = Instance.new("Frame")
+TabBar.Parent = MainFrame
+TabBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+TabBar.Position = UDim2.new(0, 0, 0, 36)
+TabBar.Size = UDim2.new(1, 0, 0, 32)
+
+local TabButtons = {}
+local TabPanels = {}
+
+for i = 1, 4 do
+    local btn = Instance.new("TextButton")
+    btn.Parent = TabBar
+    btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(28, 28, 42) or Color3.fromRGB(15, 15, 22)
+    btn.Position = UDim2.new((i-1)/4, 0, 0, 0)
+    btn.Size = UDim2.new(0.25, 0, 1, 0)
+    btn.Font = Enum.Font.GothamBold
+    local names = {"1. ESP", "2. COMBAT", "3. FLY", "4. UTILS"}
+    btn.Text = names[i]
+    btn.TextColor3 = (i == 1) and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(130, 130, 150)
+    btn.TextSize = 10
+    table.insert(TabButtons, btn)
+
+    local panel = Instance.new("ScrollingFrame")
+    panel.Parent = MainFrame
+    panel.BackgroundTransparency = 1
+    panel.Position = UDim2.new(0, 0, 0, 72)
+    panel.Size = UDim2.new(1, 0, 1, -72)
+    panel.CanvasSize = UDim2.new(0, 0, 2.3, 0)
+    panel.ScrollBarThickness = 3
+    panel.Visible = (i == 1)
+    table.insert(TabPanels, panel)
+end
+
+local function SwitchTab(idx)
+    for i, p in ipairs(TabPanels) do p.Visible = (i == idx) end
+    for i, b in ipairs(TabButtons) do
+        b.BackgroundColor3 = (i == idx) and Color3.fromRGB(28, 28, 42) or Color3.fromRGB(15, 15, 22)
+        b.TextColor3 = (i == idx) and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(130, 130, 150)
+    end
+end
+
+for i, b in ipairs(TabButtons) do
+    b.MouseButton1Click:Connect(function() SwitchTab(i) end)
+end
+
+-- Hàm tạo Toggle tiêu chuẩn
+local function AddToggle(parent, name, yPos, cb)
+    local btn = Instance.new("TextButton")
+    btn.Parent = parent
+    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+    btn.Position = UDim2.new(0.04, 0, 0, yPos)
+    btn.Size = UDim2.new(0.92, 0, 0, 30)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = "  " .. name
+    btn.TextColor3 = Color3.fromRGB(210, 210, 220)
+    btn.TextSize = 11
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+    local statusLbl = Instance.new("TextLabel")
+    statusLbl.Parent = btn
+    statusLbl.BackgroundTransparency = 1
+    statusLbl.Position = UDim2.new(1, -70, 0, 0)
+    statusLbl.Size = UDim2.new(0, 60, 1, 0)
+    statusLbl.Font = Enum.Font.GothamBold
+    statusLbl.Text = "[OFF]"
+    statusLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+    statusLbl.TextSize = 11
+    statusLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        statusLbl.Text = state and "[ON]" or "[OFF]"
+        statusLbl.TextColor3 = state and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(255, 80, 80)
+        cb(state)
+    end)
+    return btn
+end
+
+-- Hàm tạo Ô nhập liệu (Input)
+local function AddInputBox(parent, labelText, defaultVal, yPos, cb)
+    local lbl = Instance.new("TextLabel")
+    lbl.Parent = parent
+    lbl.BackgroundTransparency = 1
+    lbl.Position = UDim2.new(0.04, 0, 0, yPos)
+    lbl.Size = UDim2.new(0.6, 0, 0, 28)
+    lbl.Font = Enum.Font.GothamMedium
+    lbl.Text = "  " .. labelText
+    lbl.TextColor3 = Color3.fromRGB(180, 180, 195)
+    lbl.TextSize = 11
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local box = Instance.new("TextBox")
+    box.Parent = parent
+    box.BackgroundColor3 = Color3.fromRGB(24, 24, 34)
+    box.Position = UDim2.new(0.65, 0, 0, yPos)
+    box.Size = UDim2.new(0.31, 0, 0, 28)
+    box.Font = Enum.Font.GothamBold
+    box.Text = tostring(defaultVal)
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.TextSize = 11
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+
+    box.FocusLost:Connect(function()
+        local num = tonumber(box.Text)
+        if num then cb(num) end
+    end)
+end
+
+-- ============================================================================
+-- NỘI DUNG CÁC TAB (ESP, COMBAT, FLY, UTILS)
+-- ============================================================================
+local p1 = TabPanels[1]
+local ESPState = {Name=false, Box=false, HP=false, Tracer=false, Skeleton=false, Distance=false, Chams=false, HeadDot=false}
+AddToggle(p1, "ESP Tên Người Chơi", 5, function(v) ESPState.Name = v end)
+AddToggle(p1, "ESP Khung (Box)", 40, function(v) ESPState.Box = v end)
+AddToggle(p1, "ESP Thanh Máu (HP)", 75, function(v) ESPState.HP = v end)
+AddToggle(p1, "ESP Đường Kẻ (Tracer)", 110, function(v) ESPState.Tracer = v end)
+AddToggle(p1, "ESP Xương (Skeleton)", 145, function(v) ESPState.Skeleton = v end)
+AddToggle(p1, "ESP Khoảng Cách", 180, function(v) ESPState.Distance = v end)
+AddToggle(p1, "ESP Xuyên Thấu (Chams)", 215, function(v) ESPState.Chams = v end)
+AddToggle(p1, "ESP Chấm Đầu (Head Dot)", 250, function(v) ESPState.HeadDot = v end)
+
+local ESPRegistry = {}
+Players.PlayerRemoving:Connect(function(plr)
+    if ESPRegistry[plr] then
+        for _, obj in pairs(ESPRegistry[plr]) do if obj and obj.Remove then obj:Remove() end end
+        ESPRegistry[plr] = nil
+    end
+end)
+
+local p2 = TabPanels[2]
+local CombatState = {Aimbot=false, SilentAim=false, FOV=120, Hitbox=5, Speed=false}
+AddToggle(p2, "Aimbot Khóa Mục Tiêu", 5, function(v) CombatState.Aimbot = v end)
+AddToggle(p2, "Silent Aim (Tự Động Bắn Trúng)", 40, function(v) CombatState.SilentAim = v end)
+AddInputBox(p2, "Bán Kính Vòng Aim (FOV)", 120, 78, function(v) CombatState.FOV = math.clamp(v, 30, 400) end)
+AddInputBox(p2, "Hitbox Mở Rộng (5-30)", 5, 115, function(v) CombatState.Hitbox = math.clamp(v, 5, 30) end)
+AddToggle(p2, "Tốc Độ Chạy x2 (32)", 153, function(v) CombatState.Speed = v end)
+
+local p3 = TabPanels[3]
+local FlyState = {Active=false, HoldAir=false, Speed=55, Height=500}
+AddToggle(p3, "Bay Tự Do Trên Trời (Fly)", 5, function(v) FlyState.Active = v end)
+AddToggle(p3, "Giữ Đứng Yên Trên Trời (Freeze)", 40, function(v) FlyState.HoldAir = v end)
+AddInputBox(p3, "Tốc Độ Bay", 55, 78, function(v) FlyState.Speed = v end)
+AddInputBox(p3, "Độ Cao TP Nhanh", 500, 115, function(v) FlyState.Height = v end)
+
+local p4 = TabPanels[4]
+local UtilState = {Fullbright=false, XRay=false, AntiAfk=false, FpsBoost=false, NoClip=false}
+AddToggle(p4, "Sáng Mọi Nơi (Fullbright)", 5, function(v)
+    Lighting.Brightness = v and 2 or 1
+    Lighting.ClockTime = v and 14 or 12
+    Lighting.GlobalShadows = not v
+end)
+AddToggle(p4, "Nhìn Xuyên Tường (X-Ray)", 40, function(v)
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and not obj:IsDescendantOf(LocalPlayer.Character) then
+            obj.LocalTransparencyModifier = v and 0.6 or 0
+        end
+    end
+end)
+AddToggle(p4, "Chống Khóa Mạng (Anti-AFK)", 75, function(v)
+    if v then
+        local vu = game:GetService("VirtualUser")
+        LocalPlayer.Idled:Connect(function()
+            vu:Button2Down(Vector2.new(0,0), Camera.CFrame)
+            task.wait(1)
+            vu:Button2Up(Vector2.new(0,0), Camera.CFrame)
+        end)
+    end
+end)
+AddToggle(p4, "Tăng Tốc FPS / Giảm Lag", 110, function(v)
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            obj.Material = v and Enum.Material.SmoothPlastic or Enum.Material.Plastic
+            obj.Reflectance = 0
+        end
+    end
+end)
+AddToggle(p4, "Đi Xuyên Tường (NoClip)", 145, function(v) UtilState.NoClip = v end)
+
+-- Vòng lặp xử lý chính (RenderStepped)
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") and char:FindFirstChild("HumanoidRootPart") then
+        char.Humanoid.WalkSpeed = CombatState.Speed and 32 or 16
+        if FlyState.HoldAir then
+            char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(char.HumanoidRootPart.AssemblyLinearVelocity.X, 0, char.HumanoidRootPart.AssemblyLinearVelocity.Z)
+        end
+    end
+
+    if UtilState.NoClip and char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+
+    if CombatState.Hitbox > 5 then
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local pRoot = plr.Character.HumanoidRootPart
+                pRoot.Size = Vector3.new(CombatState.Hitbox, CombatState.Hitbox, CombatState.Hitbox)
+                pRoot.Transparency = 0.5
+                pRoot.CanCaller = false
+            end
+        end
+    end
+
+    -- Xử lý ESP Drawing
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local pChar = plr.Character
+            if pChar and pChar:FindFirstChild("HumanoidRootPart") and pChar:FindFirstChildOfClass("Humanoid") then
+                local hrp = pChar.HumanoidRootPart
+                local hum = pChar:FindFirstChildOfClass("Humanoid")
+                local vector, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+                if not ESPRegistry[plr] then
+                    ESPRegistry[plr] = {
+                        Box = Drawing.new("Square"),
+                        Name = Drawing.new("Text"),
+                        HP = Drawing.new("Text"),
+                        Dist = Drawing.new("Text"),
+                        Tracer = Drawing.new("Line")
+                    }
+                end
+
+                local d = ESPRegistry[plr]
+                local themeColor = Color3.fromRGB(0, 255, 170)
+
+                if onScreen and hum.Health > 0 then
+                    local boxW = 1800 / vector.Z
+                    local boxH = 3200 / vector.Z
+                    local boxX = vector.X - boxW / 2
+                    local boxY = vector.Y - boxH / 2
+
+                    if ESPState.Box then
+                        d.Box.Visible = true
+                        d.Box.Color = themeColor
+                        d.Box.Size = Vector2.new(boxW, boxH)
+                        d.Box.Position = Vector2.new(boxX, boxY)
+                    else d.Box.Visible = false end
+
+                    if ESPState.Name then
+                        d.Name.Visible = true
+                        d.Name.Text = plr.Name
+                        d.Name.Color = themeColor
+                        d.Name.Size = 12
+                        d.Name.Center = true
+                        d.Name.Position = Vector2.new(vector.X, boxY - 16)
+                    else d.Name.Visible = false end
+
+                    if ESPState.HP then
+                        d.HP.Visible = true
+                        d.HP.Text = "HP: " .. math.floor(hum.Health)
+                        d.HP.Color = Color3.fromRGB(80, 255, 120)
+                        d.HP.Size = 11
+                        d.HP.Center = true
+                        d.HP.Position = Vector2.new(vector.X, boxY - 30)
+                    else d.HP.Visible = false end
+
+                    if ESPState.Distance and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
+                        d.Dist.Visible = true
+                        d.Dist.Text = "[" .. dist .."m]"
+                        d.Dist.Color = themeColor
+                        d.Dist.Size = 11
+                        d.Dist.Center = true
+                        d.Dist.Position = Vector2.new(vector.X, boxY + boxH + 4)
+                    else d.Dist.Visible = false end
+
+                    if ESPState.Tracer then
+                        d.Tracer.Visible = true
+                        d.Tracer.Color = themeColor
+                        d.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        d.Tracer.To = Vector2.new(vector.X, vector.Y)
+                    else d.Tracer.Visible = false end
+                else
+                    for _, obj in pairs(d) do obj.Visible = false end
+                end
+            end
+        end
+    end
+end)
+
+print("[Axiom Engine] Github Loadstring Hub loaded successfully!")
