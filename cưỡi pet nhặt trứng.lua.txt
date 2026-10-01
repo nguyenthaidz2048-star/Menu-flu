@@ -1,0 +1,215 @@
+-- ============================================================================
+-- RIDE A PET: ULTIMATE SCRIPT (Teleport Trứng, Về Nhà, ESP, Speed)
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+-- Xóa UI cũ nếu có
+if CoreGui:FindFirstChild("RideAPetHub") then
+    CoreGui.RideAPetHub:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RideAPetHub"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Tạo Khung Menu Chính
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+MainFrame.Position = UDim2.new(0.5, -180, 0.5, -150)
+MainFrame.Size = UDim2.new(0, 360, 0, 300)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+-- Thanh Tiêu Đề
+local TitleBar = Instance.new("Frame")
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+TitleBar.Size = UDim2.new(1, 0, 0, 32)
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Parent = TitleBar
+TitleText.BackgroundTransparency = 1
+TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.Size = UDim2.new(1, -20, 1, 0)
+TitleText.Font = Enum.Font.GothamBold
+TitleText.Text = "RIDE A PET // SCRIPT HUB"
+TitleText.TextColor3 = Color3.fromRGB(0, 255, 170)
+TitleText.TextSize = 12
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Container chức năng
+local Container = Instance.new("ScrollingFrame")
+Container.Parent = MainFrame
+Container.BackgroundTransparency = 1
+Container.Position = UDim2.new(0, 0, 0, 40)
+Container.Size = UDim2.new(1, 0, 1, -40)
+Container.CanvasSize = UDim2.new(0, 0, 1.8, 0)
+Container.ScrollBarThickness = 3
+
+-- Hàm tạo Nút bấm chức năng (Button)
+local function AddButton(name, yPos, cb)
+    local btn = Instance.new("TextButton")
+    btn.Parent = Container
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+    btn.Position = UDim2.new(0.05, 0, 0, yPos)
+    btn.Size = UDim2.new(0.9, 0, 0, 32)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 11
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    btn.MouseButton1Click:Connect(cb)
+    return btn
+end
+
+-- Hàm tạo Toggle Bật/Tắt
+local function AddToggle(name, yPos, cb)
+    local btn = Instance.new("TextButton")
+    btn.Parent = Container
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
+    btn.Position = UDim2.new(0.05, 0, 0, yPos)
+    btn.Size = UDim2.new(0.9, 0, 0, 32)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = "  " .. name
+    btn.TextColor3 = Color3.fromRGB(210, 210, 220)
+    btn.TextSize = 11
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+    local statusLbl = Instance.new("TextLabel")
+    statusLbl.Parent = btn
+    statusLbl.BackgroundTransparency = 1
+    statusLbl.Position = UDim2.new(1, -70, 0, 0)
+    statusLbl.Size = UDim2.new(0, 60, 1, 0)
+    statusLbl.Font = Enum.Font.GothamBold
+    statusLbl.Text = "[OFF]"
+    statusLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+    statusLbl.TextSize = 11
+    statusLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        statusLbl.Text = state and "[ON]" or "[OFF]"
+        statusLbl.TextColor3 = state and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(255, 80, 80)
+        cb(state)
+    end)
+end
+
+-- Biến lưu trạng thái cấu hình
+local Config = {
+    Speed = 50,
+    ESP_Enabled = false
+}
+
+-- 1. Tính năng Chỉnh Tốc Độ (Speed)
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        if Config.Speed > 16 then
+            char.Humanoid.WalkSpeed = Config.Speed
+        end
+    end
+end)
+
+AddButton("Đổi tốc độ chạy (Set Speed: 60)", 10, function()
+    Config.Speed = 60
+    print("[Axiom] Đã tăng tốc độ chạy lên 60!")
+end)
+
+AddButton("Tốc độ siêu nhanh (Set Speed: 120)", 50, function()
+    Config.Speed = 120
+    print("[Axiom] Đã tăng tốc độ chạy lên 120!")
+end)
+
+-- 2. Tính năng Teleport đến Trứng (Tìm các object trứng trong map)
+AddButton("Teleport Đến Trứng Gần Nhất", 90, function()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    
+    local targetEgg = nil
+    local minDist = math.huge
+    
+    -- Quét toàn bộ workspace tìm vật thể liên quan đến "Egg" hoặc "Trứng"
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if (obj:IsA("Model") or obj:IsA("BasePart")) and (string.find(string.lower(obj.Name), "egg") or string.find(string.lower(obj.Name), "trứng")) then
+            local pos = obj:IsA("Model") and obj:GetPivot().Position or obj.Position
+            local dist = (char.HumanoidRootPart.Position - pos).Magnitude
+            if dist < minDist then
+                minDist = dist
+                targetEgg = obj
+            end
+        end
+    end
+    
+    if targetEgg then
+        local targetPos = targetEgg:IsA("Model") and targetEgg:GetPivot() or targetEgg.CFrame
+        char:MoveTo(targetPos.Position + Vector3.new(0, 3, 0))
+        print("[Axiom] Đã dịch chuyển đến trứng thành công!")
+    else
+        warn("[Axiom] Không tìm thấy trứng nào gần đây!")
+    end
+end)
+
+-- 3. Tính năng Teleport Về Nhà / Căn cứ
+AddButton("Teleport Về Nhà (Base)", 130, function()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    
+    local targetBase = nil
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if (obj:IsA("Model") or obj:IsA("BasePart")) and (string.find(string.lower(obj.Name), "base") or string.find(string.lower(obj.Name), "home") or string.find(string.lower(obj.Name), "nhà")) then
+            targetBase = obj
+            break
+        end
+    end
+    
+    if targetBase then
+        local targetPos = targetBase:IsA("Model") and targetBase:GetPivot() or targetBase.CFrame
+        char:MoveTo(targetPos.Position + Vector3.new(0, 3, 0))
+        print("[Axiom] Đã bay về nhà thành công!")
+    else
+        -- Fallback: Nếu không tìm thấy tên base, dịch chuyển về tọa độ gốc hoặc vị trí spawn
+        if Workspace:FindFirstChild("SpawnLocation") then
+            char:MoveTo(Workspace.SpawnLocation.Position + Vector3.new(0, 3, 0))
+        else
+            warn("[Axiom] Không tìm thấy vị trí nhà/base trong map!")
+        end
+    end
+end)
+
+-- 4. Tính năng ESP Thú Cưng / Trứng
+AddToggle("Bật ESP Nhìn Xuyên Trứng/Pet", 175, function(state)
+    Config.ESP_Enabled = state
+    
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if (obj:IsA("Model") or obj:IsA("BasePart")) and (string.find(string.lower(obj.Name), "egg") or string.find(string.lower(obj.Name), "pet") or string.find(string.lower(obj.Name), "trứng")) then
+            if state then
+                if not obj:FindFirstChild("AxiomHighlight") then
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "AxiomHighlight"
+                    hl.Adornee = obj
+                    hl.FillColor = Color3.fromRGB(0, 255, 170)
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    hl.Parent = obj
+                end
+            else
+                if obj:FindFirstChild("AxiomHighlight") then
+                    obj.AxiomHighlight:Destroy()
+                end
+            end
+        end
+    end
+end)
+
+print("[Axiom Engine] Ride a Pet Script Loaded Successfully!")
