@@ -1,0 +1,248 @@
+-- ============================================================================
+-- RIDE A PET: ULTIMATE ESP & SPEED CUSTOMIZER
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Xóa UI cũ nếu có
+if CoreGui:FindFirstChild("RideAPetAdvanced") then
+    CoreGui.RideAPetAdvanced:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RideAPetAdvanced"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Khung Menu Chính
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -170)
+MainFrame.Size = UDim2.new(0, 400, 0, 340)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+-- Thanh Tiêu Đề
+local TitleBar = Instance.new("Frame")
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+TitleBar.Size = UDim2.new(1, 0, 0, 36)
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Parent = TitleBar
+TitleText.BackgroundTransparency = 1
+TitleText.Position = UDim2.new(0, 12, 0, 0)
+TitleText.Size = UDim2.new(1, -20, 1, 0)
+TitleText.Font = Enum.Font.GothamBold
+TitleText.Text = "RIDE A PET // PRO SCRIPT HUB"
+TitleText.TextColor3 = Color3.fromRGB(0, 255, 170)
+TitleText.TextSize = 12
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Container chức năng
+local Container = Instance.new("ScrollingFrame")
+Container.Parent = MainFrame
+Container.BackgroundTransparency = 1
+Container.Position = UDim2.new(0, 0, 0, 44)
+Container.Size = UDim2.new(1, 0, 1, -44)
+Container.CanvasSize = UDim2.new(0, 0, 1.6, 0)
+Container.ScrollBarThickness = 3
+
+-- Hàm tạo Nút bấm nhanh (Button)
+local function AddButton(name, yPos, cb)
+    local btn = Instance.new("TextButton")
+    btn.Parent = Container
+    btn.BackgroundColor3 = Color3.fromRGB(26, 26, 38)
+    btn.Position = UDim2.new(0.05, 0, 0, yPos)
+    btn.Size = UDim2.new(0.9, 0, 0, 32)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 11
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(cb)
+end
+
+-- Hàm tạo Ô nhập số liệu (Input Box)
+local function AddInputBox(labelText, defaultVal, yPos, cb)
+    local lbl = Instance.new("TextLabel")
+    lbl.Parent = Container
+    lbl.BackgroundTransparency = 1
+    lbl.Position = UDim2.new(0.05, 0, 0, yPos)
+    lbl.Size = UDim2.new(0.55, 0, 0, 32)
+    lbl.Font = Enum.Font.GothamMedium
+    lbl.Text = "  " .. labelText
+    lbl.TextColor3 = Color3.fromRGB(200, 200, 215)
+    lbl.TextSize = 11
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local box = Instance.new("TextBox")
+    box.Parent = Container
+    box.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+    box.Position = UDim2.new(0.62, 0, 0, yPos)
+    box.Size = UDim2.new(0.33, 0, 0, 32)
+    box.Font = Enum.Font.GothamBold
+    box.Text = tostring(defaultVal)
+    box.TextColor3 = Color3.fromRGB(0, 255, 170)
+    box.TextSize = 11
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+
+    box.FocusLost:Connect(function()
+        local num = tonumber(box.Text)
+        if num then cb(num) end
+    end)
+end
+
+-- Hàm tạo Nút Bật/Tắt (Toggle)
+local function AddToggle(name, yPos, cb)
+    local btn = Instance.new("TextButton")
+    btn.Parent = Container
+    btn.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+    btn.Position = UDim2.new(0.05, 0, 0, yPos)
+    btn.Size = UDim2.new(0.9, 0, 0, 32)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = "  " .. name
+    btn.TextColor3 = Color3.fromRGB(210, 210, 220)
+    btn.TextSize = 11
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+    local statusLbl = Instance.new("TextLabel")
+    statusLbl.Parent = btn
+    statusLbl.BackgroundTransparency = 1
+    statusLbl.Position = UDim2.new(1, -70, 0, 0)
+    statusLbl.Size = UDim2.new(0, 60, 1, 0)
+    statusLbl.Font = Enum.Font.GothamBold
+    statusLbl.Text = "[OFF]"
+    statusLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+    statusLbl.TextSize = 11
+    statusLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        statusLbl.Text = state and "[ON]" or "[OFF]"
+        statusLbl.TextColor3 = state and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(255, 80, 80)
+        cb(state)
+    end)
+end
+
+-- ============================================================================
+-- CẤU HÌNH TÍNH NĂNG
+-- ============================================================================
+local Config = {
+    Speed = 16,
+    ESP_EggName = false
+}
+
+-- 1. Ô nhập chỉnh tốc độ Pet tự do từ 400 đến 9,999,990
+AddInputBox("Tốc Độ Pet (400 - 9.9M)", 400, 10, function(val)
+    Config.Speed = math.clamp(val, 400, 9999990)
+    print("[Axiom] Đã đặt tốc độ Pet thành: " .. Config.Speed)
+end)
+
+-- 2. Teleport Trứng & Về Nhà
+AddButton("Teleport Đến Trứng Gần Nhất", 55, function()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local targetEgg, minDist = nil, math.huge
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if (obj:IsA("Model") or obj:IsA("BasePart")) and string.find(string.lower(obj.Name), "egg") then
+            local pos = obj:IsA("Model") and obj:GetPivot().Position or obj.Position
+            local dist = (char.HumanoidRootPart.Position - pos).Magnitude
+            if dist < minDist then minDist = dist; targetEgg = obj end
+        end
+    end
+    if targetEgg then
+        local targetPos = targetEgg:IsA("Model") and targetEgg:GetPivot() or targetEgg.CFrame
+        char:MoveTo(targetPos.Position + Vector3.new(0, 3, 0))
+    end
+end)
+
+AddButton("Teleport Về Nhà (Base)", 100, function()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local targetBase = nil
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if (obj:IsA("Model") or obj:IsA("BasePart")) and (string.find(string.lower(obj.Name), "base") or string.find(string.lower(obj.Name), "home")) then
+            targetBase = obj; break
+        end
+    end
+    if targetBase then
+        local targetPos = targetBase:IsA("Model") and targetBase:GetPivot() or targetBase.CFrame
+        char:MoveTo(targetPos.Position + Vector3.new(0, 3, 0))
+    elseif Workspace:FindFirstChild("SpawnLocation") then
+        char:MoveTo(Workspace.SpawnLocation.Position + Vector3.new(0, 3, 0))
+    end
+end)
+
+-- 3. Toggle ESP Tên Trứng + Khoảng Cách
+AddToggle("ESP Tên Trứng + Khoảng Cách", 145, function(state)
+    Config.ESP_EggName = state
+end)
+
+-- ============================================================================
+-- VÒNG LẶP XỬ LÝ CHÍNH (RENDER STEPPED)
+-- ============================================================================
+local EggESPRegistry = {}
+
+RunService.RenderStepped:Connect(function()
+    -- Xử lý ép tốc độ pet / nhân vật từ 400 đến 9.9M
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        if Config.Speed > 16 then
+            char.Humanoid.WalkSpeed = Config.Speed
+        end
+    end
+
+    -- Xử lý hiển thị ESP Tên Trứng và Khoảng cách thực tế trên màn hình
+    if Config.ESP_EggName then
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if (obj:IsA("Model") or obj:IsA("BasePart")) and string.find(string.lower(obj.Name), "egg") then
+                local pos = obj:IsA("Model") and obj:GetPivot().Position or obj.Position
+                local vector, onScreen = Camera:WorldToViewportPoint(pos)
+                
+                if not EggESPRegistry[obj] then
+                    local txt = Drawing.new("Text")
+                    txt.Visible = false
+                    txt.Center = true
+                    txt.Size = 12
+                    txt.Color = Color3.fromRGB(0, 255, 170)
+                    EggESPRegistry[obj] = txt
+                end
+                
+                local txtObj = EggESPRegistry[obj]
+                if onScreen and char and char:FindFirstChild("HumanoidRootPart") then
+                    local dist = math.floor((char.HumanoidRootPart.Position - pos).Magnitude)
+                    txtObj.Visible = true
+                    txtObj.Text = "🥚 " .. obj.Name .. " [" .. dist .. "m]"
+                    txtObj.Position = Vector2.new(vector.X, vector.Y)
+                else
+                    txtObj.Visible = false
+                end
+            end
+        end
+    else
+        for _, txt in pairs(EggESPRegistry) do
+            txt.Visible = false
+        end
+    end
+end)
+
+-- Dọn dẹp ESP khi object mất đi
+Workspace.DescendantRemoving:Connect(function(obj)
+    if EggESPRegistry[obj] then
+        EggESPRegistry[obj]:Remove()
+        EggESPRegistry[obj] = nil
+    end
+end)
+
+print("[Axiom Engine] Advanced Ride a Pet Hub Loaded!")
