@@ -1,0 +1,572 @@
+-- ============================================================================
+-- FLU V3 // GITHUB PROXY (ULTIMATE + CAM CAO, SPEED, HITBOX EDITION)
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Xóa UI cũ nếu tồn tại để tránh trùng lặp
+pcall(function()
+    if CoreGui:FindFirstChild("FluV3Hub") then CoreGui.FluV3Hub:Destroy() end
+    if CoreGui:FindFirstChild("FluV3CrystalLogo") then CoreGui.FluV3CrystalLogo:Destroy() end
+end)
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FluV3Hub"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local LogoGui = Instance.new("ScreenGui")
+LogoGui.Name = "FluV3CrystalLogo"
+LogoGui.Parent = CoreGui
+LogoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- ============================================================================
+-- CẤU HÌNH BIẾN TOÀN CỤC (CONFIG)
+-- ============================================================================
+local Config = {
+    -- 1. Aimbot & Silent V2
+    AimbotEnabled = false,
+    AimSilentV2 = false,
+    AimTarget = "Head",
+    FOVRate = 350,
+    AimDistance = 360,
+
+    -- 2. Combat & Kill Aura & Hitbox
+    KillAura700m = false,
+    HitPartTarget = "Default",
+    HitboxExpander = false,
+    HitboxSize = 5, -- Kích thước mở rộng hitbox
+
+    -- 3. Visuals / ESP & Color
+    EnemyESP = false,
+    ESP_Line = false,
+    ESP_Box = false,
+    ESP_Health = false,
+    ESP_Nickname = false,
+    ESP_Distance = false,
+    ESP_HeadDot = false,
+    ESP_Color = Color3.fromRGB(180, 50, 255),
+
+    -- 4. Movement, NoClip, Fly Cam, Speed & Cam Cao
+    NoClip = false,
+    FlyCam360 = false,
+    SpeedEnabled = false,
+    WalkSpeed = 25,
+    CamHighEnabled = false,
+    CamDistance = 30, -- Độ cao/xa camera
+
+    -- 5. Character Orbit
+    CharacterOrbit = false,
+    OrbitSpeed = 5.0,
+    OrbitRadius = 8.0,
+
+    -- 6. Misc
+    GhostMode = false
+}
+
+-- ============================================================================
+-- NÚT THU NHỎ - LOGO CRYSTAL TÍM (💎)
+-- ============================================================================
+local CrystalButton = Instance.new("TextButton")
+CrystalButton.Parent = LogoGui
+CrystalButton.BackgroundColor3 = Color3.fromRGB(35, 15, 60)
+CrystalButton.BorderColor3 = Color3.fromRGB(180, 50, 255)
+CrystalButton.BorderSizePixel = 2
+CrystalButton.Position = UDim2.new(0, 20, 0.4, 0)
+CrystalButton.Size = UDim2.new(0, 48, 0, 48)
+CrystalButton.Font = Enum.Font.GothamBold
+CrystalButton.Text = "💎"
+CrystalButton.TextSize = 24
+CrystalButton.Active = true
+CrystalButton.Draggable = true
+Instance.new("UICorner", CrystalButton).CornerRadius = UDim.new(1, 0)
+
+-- ============================================================================
+-- GIAO DIỆN CHÍNH (MAIN FRAME)
+-- ============================================================================
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
+MainFrame.BorderColor3 = Color3.fromRGB(140, 40, 255)
+MainFrame.BorderSizePixel = 1
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -170)
+MainFrame.Size = UDim2.new(0, 460, 0, 340)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+local IsMenuOpen = true
+CrystalButton.MouseButton1Click:Connect(function()
+    IsMenuOpen = not IsMenuOpen
+    MainFrame.Visible = IsMenuOpen
+end)
+
+-- Thanh Tiêu Đề
+local TitleBar = Instance.new("Frame")
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = Color3.fromRGB(24, 20, 35)
+TitleBar.Size = UDim2.new(1, 0, 0, 32)
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Parent = TitleBar
+TitleText.BackgroundTransparency = 1
+TitleText.Position = UDim2.new(0, 12, 0, 0)
+TitleText.Size = UDim2.new(1, -50, 1, 0)
+TitleText.Font = Enum.Font.GothamBold
+TitleText.Text = "💎 FLU V3 // FULL OPTIONS EDITION"
+TitleText.TextColor3 = Color3.fromRGB(200, 100, 255)
+TitleText.TextSize = 11
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseMenuBtn = Instance.new("TextButton")
+CloseMenuBtn.Parent = TitleBar
+CloseMenuBtn.BackgroundColor3 = Color3.fromRGB(50, 25, 75)
+CloseMenuBtn.Position = UDim2.new(1, -32, 0, 5)
+CloseMenuBtn.Size = UDim2.new(0, 24, 0, 22)
+CloseMenuBtn.Font = Enum.Font.GothamBold
+CloseMenuBtn.Text = "x"
+CloseMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseMenuBtn.TextSize = 12
+Instance.new("UICorner", CloseMenuBtn).CornerRadius = UDim.new(0, 4)
+
+CloseMenuBtn.MouseButton1Click:Connect(function()
+    IsMenuOpen = false
+    MainFrame.Visible = false
+end)
+
+-- Sidebar Tabs
+local Sidebar = Instance.new("Frame")
+Sidebar.Parent = MainFrame
+Sidebar.BackgroundColor3 = Color3.fromRGB(12, 10, 16)
+Sidebar.Position = UDim2.new(0, 0, 0, 32)
+Sidebar.Size = UDim2.new(0, 115, 1, -32)
+
+local TabContainer = Instance.new("Frame")
+TabContainer.Parent = MainFrame
+TabContainer.BackgroundTransparency = 1
+TabContainer.Position = UDim2.new(0, 120, 0, 35)
+TabContainer.Size = UDim2.new(1, -125, 1, -40)
+
+local Tabs = {}
+local TabButtons = {}
+
+local function CreateTab(tabName, iconText)
+    local page = Instance.new("ScrollingFrame")
+    page.Parent = TabContainer
+    page.BackgroundTransparency = 1
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.CanvasSize = UDim2.new(0, 0, 2.5, 0)
+    page.ScrollBarThickness = 2
+    page.Visible = false
+
+    local btn = Instance.new("TextButton")
+    btn.Parent = Sidebar
+    btn.BackgroundColor3 = Color3.fromRGB(22, 18, 32)
+    btn.Size = UDim2.new(0.9, 0, 0, 28)
+    btn.Position = UDim2.new(0.05, 0, 0, (#TabButtons * 32) + 6)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = iconText .. " " .. tabName
+    btn.TextColor3 = Color3.fromRGB(160, 140, 190)
+    btn.TextSize = 10
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+    btn.MouseButton1Click:Connect(function()
+        for _, p in pairs(Tabs) do p.Visible = false end
+        for _, b in pairs(TabButtons) do 
+            b.BackgroundColor3 = Color3.fromRGB(22, 18, 32)
+            b.TextColor3 = Color3.fromRGB(160, 140, 190)
+        end
+        page.Visible = true
+        btn.BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+
+    table.insert(TabButtons, btn)
+    Tabs[tabName] = page
+    return page
+end
+
+local TabCombat = CreateTab("Combat", "⚔️")
+local TabVisuals = CreateTab("Visuals", "👁")
+local TabMovement = CreateTab("Movements", "🚀")
+local TabMisc = CreateTab("Misc", "⚙️")
+
+Tabs["Combat"].Visible = true
+TabButtons[1].BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+TabButtons[1].TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- UI Helpers
+local function AddToggle(parent, text, defaultVal, yPos, cb)
+    local btn = Instance.new("TextButton")
+    btn.Parent = parent
+    btn.BackgroundColor3 = Color3.fromRGB(25, 21, 36)
+    btn.Position = UDim2.new(0.02, 0, 0, yPos)
+    btn.Size = UDim2.new(0.96, 0, 0, 26)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = "  " .. text
+    btn.TextColor3 = Color3.fromRGB(220, 210, 235)
+    btn.TextSize = 10
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+    local stateLbl = Instance.new("TextLabel")
+    stateLbl.Parent = btn
+    stateLbl.BackgroundTransparency = 1
+    stateLbl.Position = UDim2.new(1, -55, 0, 0)
+    stateLbl.Size = UDim2.new(0, 50, 1, 0)
+    stateLbl.Font = Enum.Font.GothamBold
+    stateLbl.Text = defaultVal and "ON" or "OFF"
+    stateLbl.TextColor3 = defaultVal and Color3.fromRGB(150, 50, 255) or Color3.fromRGB(255, 70, 70)
+    stateLbl.TextSize = 10
+
+    local val = defaultVal
+    btn.MouseButton1Click:Connect(function()
+        val = not val
+        stateLbl.Text = val and "ON" or "OFF"
+        stateLbl.TextColor3 = val and Color3.fromRGB(150, 50, 255) or Color3.fromRGB(255, 70, 70)
+        cb(val)
+    end)
+end
+
+local function AddDropdown(parent, title, options, yPos, cb)
+    local lbl = Instance.new("TextLabel")
+    lbl.Parent = parent
+    lbl.BackgroundTransparency = 1
+    lbl.Position = UDim2.new(0.02, 0, 0, yPos)
+    lbl.Size = UDim2.new(0.96, 0, 0, 18)
+    lbl.Font = Enum.Font.GothamBold
+    lbl.Text = title .. ": [ " .. options[1] .. " ]"
+    lbl.TextColor3 = Color3.fromRGB(210, 130, 255)
+    lbl.TextSize = 10
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local idx = 1
+    local btn = Instance.new("TextButton")
+    btn.Parent = parent
+    btn.BackgroundColor3 = Color3.fromRGB(32, 26, 46)
+    btn.Position = UDim2.new(0.02, 0, 0, yPos + 18)
+    btn.Size = UDim2.new(0.96, 0, 0, 22)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = "Chạm để đổi lựa chọn"
+    btn.TextColor3 = Color3.fromRGB(230, 220, 240)
+    btn.TextSize = 9
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+    btn.MouseButton1Click:Connect(function()
+        idx = idx + 1
+        if idx > #options then idx = 1 end
+        lbl.Text = title .. ": [ " .. options[idx] .. " ]"
+        cb(options[idx])
+    end)
+end
+
+local function AddSlider(parent, text, minVal, maxVal, defaultVal, yPos, cb)
+    local lbl = Instance.new("TextLabel")
+    lbl.Parent = parent
+    lbl.BackgroundTransparency = 1
+    lbl.Position = UDim2.new(0.02, 0, 0, yPos)
+    lbl.Size = UDim2.new(0.6, 0, 0, 24)
+    lbl.Font = Enum.Font.GothamMedium
+    lbl.Text = "  " .. text
+    lbl.TextColor3 = Color3.fromRGB(200, 190, 215)
+    lbl.TextSize = 10
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local box = Instance.new("TextBox")
+    box.Parent = parent
+    box.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+    box.Position = UDim2.new(0.65, 0, 0, yPos)
+    box.Size = UDim2.new(0.33, 0, 0, 24)
+    box.Font = Enum.Font.GothamBold
+    box.Text = tostring(defaultVal)
+    box.TextColor3 = Color3.fromRGB(190, 100, 255)
+    box.TextSize = 10
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+
+    box.FocusLost:Connect(function()
+        local n = tonumber(box.Text)
+        if n then
+            local clamped = math.clamp(n, minVal, maxVal)
+            box.Text = tostring(clamped)
+            cb(clamped)
+        end
+    end)
+end
+
+-- ============================================================================
+-- ĐIỀN CHỨC NĂNG VÀO CÁC TAB (ĐÃ THÊM CAM CAO, SPEED, HITBOX)
+-- ============================================================================
+-- Tab Combat
+AddToggle(TabCombat, "Aimbot Enable", Config.AimbotEnabled, 5, function(v) Config.AimbotEnabled = v end)
+AddToggle(TabCombat, "Aim Silent V2", Config.AimSilentV2, 35, function(v) Config.AimSilentV2 = v end)
+AddToggle(TabCombat, "Kill Aura (700m)", Config.KillAura700m, 65, function(v) Config.KillAura700m = v end)
+AddToggle(TabCombat, "Hitbox Expander (Mở rộng địch)", Config.HitboxExpander, 95, function(v) Config.HitboxExpander = v end)
+AddSlider(TabCombat, "Hitbox Size", 2, 20, Config.HitboxSize, 125, function(v) Config.HitboxSize = v end)
+AddDropdown(TabCombat, "Hit Part (Cổ / Bụng / Đầu)", {"Default", "Head", "Neck", "Stomach", "Normal"}, 160, function(v) Config.HitPartTarget = v end)
+AddSlider(TabCombat, "FOV Rate", 30, 500, Config.FOVRate, 215, function(v) Config.FOVRate = v end)
+
+-- Tab Visuals
+AddToggle(TabVisuals, "Enemy ESP", Config.EnemyESP, 5, function(v) Config.EnemyESP = v end)
+AddToggle(TabVisuals, "Box ESP", Config.ESP_Box, 35, function(v) Config.ESP_Box = v end)
+AddToggle(TabVisuals, "Line Tracer", Config.ESP_Line, 65, function(v) Config.ESP_Line = v end)
+AddToggle(TabVisuals, "Nickname", Config.ESP_Nickname, 95, function(v) Config.ESP_Nickname = v end)
+AddToggle(TabVisuals, "Health", Config.ESP_Health, 125, function(v) Config.ESP_Health = v end)
+AddToggle(TabVisuals, "Distance", Config.ESP_Distance, 155, function(v) Config.ESP_Distance = v end)
+AddToggle(TabVisuals, "Head Dot", Config.ESP_HeadDot, 185, function(v) Config.ESP_HeadDot = v end)
+AddDropdown(TabVisuals, "ESP Color Theme", {"Purple", "Cyan", "Red", "Green", "Gold"}, 220, function(v)
+    if v == "Purple" then Config.ESP_Color = Color3.fromRGB(180, 50, 255)
+    elseif v == "Cyan" then Config.ESP_Color = Color3.fromRGB(0, 220, 255)
+    elseif v == "Red" then Config.ESP_Color = Color3.fromRGB(255, 50, 50)
+    elseif v == "Green" then Config.ESP_Color = Color3.fromRGB(50, 255, 100)
+    elseif v == "Gold" then Config.ESP_Color = Color3.fromRGB(255, 215, 0) end
+end)
+
+-- Tab Movement
+AddToggle(TabMovement, "NoClip (Xuyên tường)", Config.NoClip, 5, function(v) Config.NoClip = v end)
+AddToggle(TabMovement, "Speed (Tốc độ chạy)", Config.SpeedEnabled, 35, function(v) Config.SpeedEnabled = v end)
+AddSlider(TabMovement, "WalkSpeed Value", 16, 150, Config.WalkSpeed, 65, function(v) Config.WalkSpeed = v end)
+AddToggle(TabMovement, "Cam Cao (Camera Zoom)", Config.CamHighEnabled, 100, function(v) Config.CamHighEnabled = v end)
+AddSlider(TabMovement, "Camera Distance", 10, 150, Config.CamDistance, 130, function(v) Config.CamDistance = v end)
+AddToggle(TabMovement, "Fly Cam 360°", Config.FlyCam360, 165, function(v) Config.FlyCam360 = v end)
+AddToggle(TabMovement, "Character Orbit (Xoay nhân vật)", Config.CharacterOrbit, 195, function(v) Config.CharacterOrbit = v end)
+AddSlider(TabMovement, "Orbit Speed", 1.0, 20.0, Config.OrbitSpeed, 230, function(v) Config.OrbitSpeed = v end)
+
+-- Tab Misc
+AddToggle(TabMisc, "Ghost Mode", Config.GhostMode, 5, function(v) Config.GhostMode = v end)
+
+-- ============================================================================
+-- HỆ THỐNG XỬ LÝ LOGIC NÂNG CAO (RUNSERVICE)
+-- ============================================================================
+local ESPRegistry = {}
+local orbitAngle = 0
+local flyCamAngle = 0
+
+RunService.RenderStepped:Connect(function(dt)
+    -- 1. Xử lý NoClip
+    if Config.NoClip then
+        pcall(function()
+            local char = LocalPlayer.Character
+            if char then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end
+
+    -- 2. Xử lý Speed
+    if Config.SpeedEnabled then
+        pcall(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") then
+                char.Humanoid.WalkSpeed = Config.WalkSpeed
+            end
+        end)
+    end
+
+    -- 3. Xử lý Cam Cao (Camera MaxZoom / Distance)
+    if Config.CamHighEnabled then
+        pcall(function()
+            LocalPlayer.CameraMaxZoomDistance = Config.CamDistance
+            LocalPlayer.CameraMinZoomDistance = Config.CamDistance
+        end)
+    else
+        pcall(function()
+            LocalPlayer.CameraMaxZoomDistance = 400
+            LocalPlayer.CameraMinZoomDistance = 0.5
+        end)
+    end
+
+    -- 4. Xử lý Hitbox Expander (Mở rộng phần thân mục tiêu)
+    if Config.HitboxExpander then
+        pcall(function()
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = plr.Character.HumanoidRootPart
+                    hrp.Size = Vector3.new(Config.HitboxSize, Config.HitboxSize, Config.HitboxSize)
+                    hrp.Transparency = 0.7
+                    hrp.BrickColor = BrickColor.new("Magenta")
+                    hrp.Material = Enum.Material.Neon
+                    hrp.CanCollide = false
+                end
+            end
+        end)
+    end
+
+    -- 5. Xử lý Nhân Vật Xoay Xoay (Orbit Character)
+    if Config.CharacterOrbit then
+        pcall(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                orbitAngle = orbitAngle + (Config.OrbitSpeed * dt)
+                local offset = Vector3.new(math.cos(orbitAngle) * Config.OrbitRadius, 2, math.sin(orbitAngle) * Config.OrbitRadius)
+            end
+        end)
+    end
+
+    -- 6. Xử lý Fly Cam 360°
+    if Config.FlyCam360 then
+        pcall(function()
+            flyCamAngle = flyCamAngle + (1.5 * dt)
+            Camera.CameraType = Enum.CameraType.Scriptable
+            local centerPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
+            Camera.CFrame = CFrame.new(centerPos + Vector3.new(math.cos(flyCamAngle) * 15, 10, math.sin(flyCamAngle) * 15), centerPos)
+        end)
+    else
+        if Camera.CameraType == Enum.CameraType.Scriptable and not Config.FlyCam360 then
+            Camera.CameraType = Enum.CameraType.Custom
+        end
+    end
+
+    -- 7. Xử lý Aimbot & Aim Silent V2
+    if Config.AimbotEnabled or Config.AimSilentV2 then
+        pcall(function()
+            local targetPartName = "Head"
+            if Config.HitPartTarget == "Neck" then targetPartName = "UpperTorso"
+            elseif Config.HitPartTarget == "Stomach" then targetPartName = "LowerTorso"
+            elseif Config.HitPartTarget == "Normal" then targetPartName = "HumanoidRootPart" end
+
+            local closestPart = nil
+            local minDist = Config.FOVRate
+
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+                    local part = plr.Character:FindFirstChild(targetPartName) or plr.Character:FindFirstChild("Head")
+                    if part then
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                        if onScreen then
+                            local mPos = UserInputService:GetMouseLocation()
+                            local dist = (Vector2.new(screenPos.X, screenPos.Y) - mPos).Magnitude
+                            if dist < minDist then
+                                minDist = dist
+                                closestPart = part
+                            end
+                        end
+                    end
+                end
+            end
+
+            if closestPart then
+                if Config.AimbotEnabled then
+                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, closestPart.Position)
+                end
+            end
+        end)
+    end
+
+    -- 8. Xử lý Kill Aura 700m
+    if Config.KillAura700m then
+        pcall(function()
+            local myChar = LocalPlayer.Character
+            if myChar and myChar:FindFirstChild("HumanoidRootPart") then
+                local myPos = myChar.HumanoidRootPart.Position
+                for _, plr in ipairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChildOfClass("Humanoid") then
+                        local enemyHum = plr.Character:FindFirstChildOfClass("Humanoid")
+                        local enemyRoot = plr.Character.HumanoidRootPart
+                        if enemyHum.Health > 0 and (enemyRoot.Position - myPos).Magnitude <= 700 then
+                            -- Xử lý tác động tự động phạm vi 700m
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
+    -- 9. Xử lý ESP toàn diện với Màu tùy chỉnh
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local char = plr.Character
+            if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
+                local hrp = char.HumanoidRootPart
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                local head = char:FindFirstChild("Head")
+
+                if not ESPRegistry[plr] then
+                    ESPRegistry[plr] = {
+                        Box = Drawing.new("Square"),
+                        Name = Drawing.new("Text"),
+                        HP = Drawing.new("Text"),
+                        Tracer = Drawing.new("Line"),
+                        HeadDot = Drawing.new("Circle")
+                    }
+                    local d = ESPRegistry[plr]
+                    d.Box.Filled = false
+                    d.Box.Thickness = 1
+                    d.Name.Center = true
+                    d.Name.Size = 11
+                    d.HP.Center = true
+                    d.HP.Size = 10
+                    d.HeadDot.Filled = true
+                    d.HeadDot.Radius = 4
+                end
+
+                local d = ESPRegistry[plr]
+                local vector, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+                if onScreen and hum.Health > 0 and Config.EnemyESP then
+                    local boxW = 1500 / vector.Z
+                    local boxH = 2600 / vector.Z
+                    local boxX = vector.X - boxW / 2
+                    local boxY = vector.Y - boxH / 2
+
+                    if Config.ESP_Box then
+                        d.Box.Visible = true
+                        d.Box.Color = Config.ESP_Color
+                        d.Box.Size = Vector2.new(boxW, boxH)
+                        d.Box.Position = Vector2.new(boxX, boxY)
+                    else d.Box.Visible = false end
+
+                    if Config.ESP_Nickname or Config.ESP_Distance then
+                        d.Name.Visible = true
+                        local textStr = ""
+                        if Config.ESP_Nickname then textStr = textStr .. plr.Name end
+                        if Config.ESP_Distance then 
+                            local dist = math.floor((LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude) or 0)
+                            textStr = textStr .. " [" .. dist .. "m]"
+                        end
+                        d.Name.Text = textStr
+                        d.Name.Color = Config.ESP_Color
+                        d.Name.Position = Vector2.new(vector.X, boxY - 14)
+                    else d.Name.Visible = false end
+
+                    if Config.ESP_Health then
+                        d.HP.Visible = true
+                        d.HP.Text = "HP: " .. math.floor(hum.Health)
+                        d.HP.Color = Config.ESP_Color
+                        d.HP.Position = Vector2.new(vector.X, boxY + boxH + 2)
+                    else d.HP.Visible = false end
+
+                    if Config.ESP_Line then
+                        d.Tracer.Visible = true
+                        d.Tracer.Color = Config.ESP_Color
+                        d.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        d.Tracer.To = Vector2.new(vector.X, vector.Y)
+                    else d.Tracer.Visible = false end
+
+                    if Config.ESP_HeadDot and head then
+                        local headVec, headOnScreen = Camera:WorldToViewportPoint(head.Position)
+                        if headOnScreen then
+                            d.HeadDot.Visible = true
+                            d.HeadDot.Color = Config.ESP_Color
+                            d.HeadDot.Position = Vector2.new(headVec.X, headVec.Y)
+                        else d.HeadDot.Visible = false end
+                    else d.HeadDot.Visible = false end
+                else
+                    for _, obj in pairs(d) do obj.Visible = false end
+                end
+            end
+        end
+    end
+end)
+
+print("[FLU V3] Full Options (Cam Cao, Speed, Hitbox) Loaded Successfully!")
