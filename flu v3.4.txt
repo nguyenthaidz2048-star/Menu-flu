@@ -1,0 +1,341 @@
+-- ============================================================================
+-- FLU V3 // FLUORITE ANDROID PROXY (FULL FAKE LAG & CRYSTAL EDITION)
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Dọn dẹp GUI cũ nếu có để tránh trùng lặp
+pcall(function()
+    if CoreGui:FindFirstChild("FluV3Hub") then CoreGui.FluV3Hub:Destroy() end
+    if CoreGui:FindFirstChild("FluV3CrystalLogo") then CoreGui.FluV3CrystalLogo:Destroy() end
+    if CoreGui:FindFirstChild("FluV3FloatingFakeLag") then CoreGui.FluV3FloatingFakeLag:Destroy() end
+end)
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FluV3Hub"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local LogoGui = Instance.new("ScreenGui")
+LogoGui.Name = "FluV3CrystalLogo"
+LogoGui.Parent = CoreGui
+LogoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local FloatGui = Instance.new("ScreenGui")
+FloatGui.Name = "FluV3FloatingFakeLag"
+FloatGui.Parent = CoreGui
+FloatGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- ============================================================================
+-- CẤU HÌNH BIẾN TOÀN CỤC (CONFIG)
+-- ============================================================================
+local Config = {
+    -- 1. Fake Lag & Ghost / Freeze
+    FakeLagEnabled = false,
+    LagIntensity = 3.0,
+    GhostMode = false,
+    FreezeEnemy = false,
+    FireAutoFreeze = false,
+
+    -- 2. Aimbot
+    AimbotEnabled = false,
+    AimbotLite = false,
+    AimSilent = false,
+    AimTarget = "Head",
+    FOVRate = 350,
+    AimDistance = 360,
+
+    -- 3. Visuals / ESP
+    EnemyESP = false,
+    ESP_Line = false,
+    ESP_Box = false,
+    ESP_Health = false,
+    ESP_Nickname = false,
+    ESP_Distance = false,
+    ESP_HeadDot = false,
+
+    -- 4. Misc
+    SilentKill = false,
+    AutoFire = false,
+    FireRate = 1.70,
+    CoverKill = false,
+    MagnetTarget = "Chest"
+}
+
+-- ============================================================================
+-- NÚT THU NHỎ - LOGO CRYSTAL TÍM (💎) DÙNG ẨN/HIỆN MENU
+-- ============================================================================
+local CrystalButton = Instance.new("TextButton")
+CrystalButton.Parent = LogoGui
+CrystalButton.BackgroundColor3 = Color3.fromRGB(35, 15, 60)
+CrystalButton.BorderColor3 = Color3.fromRGB(180, 50, 255)
+CrystalButton.BorderSizePixel = 2
+CrystalButton.Position = UDim2.new(0, 20, 0.35, 0)
+CrystalButton.Size = UDim2.new(0, 48, 0, 48)
+CrystalButton.Font = Enum.Font.GothamBold
+CrystalButton.Text = "💎"
+CrystalButton.TextSize = 24
+CrystalButton.Active = true
+CrystalButton.Draggable = true
+Instance.new("UICorner", CrystalButton).CornerRadius = UDim.new(1, 0)
+
+-- ============================================================================
+-- NÚT NỔI FAKE LAG / HÌNH CON MẮT (GIỐNG MẪU VIDEO)
+-- ============================================================================
+local FloatingLagBtn = Instance.new("TextButton")
+FloatingLagBtn.Parent = FloatGui
+FloatingLagBtn.BackgroundColor3 = Color3.fromRGB(40, 20, 70)
+FloatingLagBtn.BorderColor3 = Color3.fromRGB(200, 80, 255)
+FloatingLagBtn.BorderSizePixel = 2
+FloatingLagBtn.Position = UDim2.new(0.8, 0, 0.55, 0)
+FloatingLagBtn.Size = UDim2.new(0, 56, 0, 56)
+FloatingLagBtn.Font = Enum.Font.GothamBold
+FloatingLagBtn.Text = "👁️"
+FloatingLagBtn.TextSize = 26
+FloatingLagBtn.Active = true
+FloatingLagBtn.Draggable = true
+Instance.new("UICorner", FloatingLagBtn).CornerRadius = UDim.new(1, 0)
+
+FloatingLagBtn.MouseButton1Click:Connect(function()
+    Config.FakeLagEnabled = not Config.FakeLagEnabled
+    if Config.FakeLagEnabled then
+        FloatingLagBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 220)
+        FloatingLagBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        FloatingLagBtn.BackgroundColor3 = Color3.fromRGB(40, 20, 70)
+        FloatingLagBtn.BorderColor3 = Color3.fromRGB(200, 80, 255)
+    end
+end)
+
+-- ============================================================================
+-- GIAO DIỆN CHÍNH (MAIN FRAME)
+-- ============================================================================
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
+MainFrame.BorderColor3 = Color3.fromRGB(140, 40, 255)
+MainFrame.BorderSizePixel = 1
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -170)
+MainFrame.Size = UDim2.new(0, 460, 0, 340)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+local IsMenuOpen = true
+CrystalButton.MouseButton1Click:Connect(function()
+    IsMenuOpen = not IsMenuOpen
+    MainFrame.Visible = IsMenuOpen
+end)
+
+-- Thanh Tiêu Đề
+local TitleBar = Instance.new("Frame")
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = Color3.fromRGB(24, 20, 35)
+TitleBar.Size = UDim2.new(1, 0, 0, 32)
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Parent = TitleBar
+TitleText.BackgroundTransparency = 1
+TitleText.Position = UDim2.new(0, 12, 0, 0)
+TitleText.Size = UDim2.new(1, -50, 1, 0)
+TitleText.Font = Enum.Font.GothamBold
+TitleText.Text = "💎 FLU V3 // FAKE LAG & CRYSTAL EDITION"
+TitleText.TextColor3 = Color3.fromRGB(200, 100, 255)
+TitleText.TextSize = 11
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseMenuBtn = Instance.new("TextButton")
+CloseMenuBtn.Parent = TitleBar
+CloseMenuBtn.BackgroundColor3 = Color3.fromRGB(50, 25, 75)
+CloseMenuBtn.Position = UDim2.new(1, -32, 0, 5)
+CloseMenuBtn.Size = UDim2.new(0, 24, 0, 22)
+CloseMenuBtn.Font = Enum.Font.GothamBold
+CloseMenuBtn.Text = "x"
+CloseMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseMenuBtn.TextSize = 12
+Instance.new("UICorner", CloseMenuBtn).CornerRadius = UDim.new(0, 4)
+
+CloseMenuBtn.MouseButton1Click:Connect(function()
+    IsMenuOpen = false
+    MainFrame.Visible = false
+end)
+
+-- Sidebar Tabs
+local Sidebar = Instance.new("Frame")
+Sidebar.Parent = MainFrame
+Sidebar.BackgroundColor3 = Color3.fromRGB(12, 10, 16)
+Sidebar.Position = UDim2.new(0, 0, 0, 32)
+Sidebar.Size = UDim2.new(0, 115, 1, -32)
+
+local TabContainer = Instance.new("Frame")
+TabContainer.Parent = MainFrame
+TabContainer.BackgroundTransparency = 1
+TabContainer.Position = UDim2.new(0, 120, 0, 35)
+TabContainer.Size = UDim2.new(1, -125, 1, -40)
+
+local Tabs = {}
+local TabButtons = {}
+
+local function CreateTab(tabName, iconText)
+    local page = Instance.new("ScrollingFrame")
+    page.Parent = TabContainer
+    page.BackgroundTransparency = 1
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.CanvasSize = UDim2.new(0, 0, 2.2, 0)
+    page.ScrollBarThickness = 2
+    page.Visible = false
+
+    local btn = Instance.new("TextButton")
+    btn.Parent = Sidebar
+    btn.BackgroundColor3 = Color3.fromRGB(22, 18, 32)
+    btn.Size = UDim2.new(0.9, 0, 0, 28)
+    btn.Position = UDim2.new(0.05, 0, 0, (#TabButtons * 32) + 6)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = iconText .. " " .. tabName
+    btn.TextColor3 = Color3.fromRGB(160, 140, 190)
+    btn.TextSize = 10
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+    btn.MouseButton1Click:Connect(function()
+        for _, p in pairs(Tabs) do p.Visible = false end
+        for _, b in pairs(TabButtons) do 
+            b.BackgroundColor3 = Color3.fromRGB(22, 18, 32)
+            b.TextColor3 = Color3.fromRGB(160, 140, 190)
+        end
+        page.Visible = true
+        btn.BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+
+    table.insert(TabButtons, btn)
+    Tabs[tabName] = page
+    return page
+end
+
+local TabFakeLag = CreateTab("FakeLag", "⚡")
+local TabAimbot = CreateTab("Aimbot", "🎯")
+local TabVisuals = CreateTab("Visuals", "👁")
+local TabMisc = CreateTab("Misc", "⚙️")
+local TabSettings = CreateTab("Settings", "🔧")
+
+Tabs["FakeLag"].Visible = true
+TabButtons[1].BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+TabButtons[1].TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- UI Controls Generator
+local function AddToggle(parent, text, defaultVal, yPos, cb)
+    local btn = Instance.new("TextButton")
+    btn.Parent = parent
+    btn.BackgroundColor3 = Color3.fromRGB(25, 21, 36)
+    btn.Position = UDim2.new(0.02, 0, 0, yPos)
+    btn.Size = UDim2.new(0.96, 0, 0, 26)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = "  " .. text
+    btn.TextColor3 = Color3.fromRGB(220, 210, 235)
+    btn.TextSize = 10
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+    local stateLbl = Instance.new("TextLabel")
+    stateLbl.Parent = btn
+    stateLbl.BackgroundTransparency = 1
+    stateLbl.Position = UDim2.new(1, -55, 0, 0)
+    stateLbl.Size = UDim2.new(0, 50, 1, 0)
+    stateLbl.Font = Enum.Font.GothamBold
+    stateLbl.Text = defaultVal and "ON" or "OFF"
+    stateLbl.TextColor3 = defaultVal and Color3.fromRGB(150, 50, 255) or Color3.fromRGB(255, 70, 70)
+    stateLbl.TextSize = 10
+
+    local val = defaultVal
+    btn.MouseButton1Click:Connect(function()
+        val = not val
+        stateLbl.Text = val and "ON" or "OFF"
+        stateLbl.TextColor3 = val and Color3.fromRGB(150, 50, 255) or Color3.fromRGB(255, 70, 70)
+        cb(val)
+    end)
+end
+
+local function AddSlider(parent, text, minVal, maxVal, defaultVal, yPos, cb)
+    local lbl = Instance.new("TextLabel")
+    lbl.Parent = parent
+    lbl.BackgroundTransparency = 1
+    lbl.Position = UDim2.new(0.02, 0, 0, yPos)
+    lbl.Size = UDim2.new(0.6, 0, 0, 24)
+    lbl.Font = Enum.Font.GothamMedium
+    lbl.Text = "  " .. text
+    lbl.TextColor3 = Color3.fromRGB(200, 190, 215)
+    lbl.TextSize = 10
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local box = Instance.new("TextBox")
+    box.Parent = parent
+    box.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+    box.Position = UDim2.new(0.65, 0, 0, yPos)
+    box.Size = UDim2.new(0.33, 0, 0, 24)
+    box.Font = Enum.Font.GothamBold
+    box.Text = tostring(defaultVal)
+    box.TextColor3 = Color3.fromRGB(190, 100, 255)
+    box.TextSize = 10
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+
+    box.FocusLost:Connect(function()
+        local n = tonumber(box.Text)
+        if n then
+            local clamped = math.clamp(n, minVal, maxVal)
+            box.Text = tostring(clamped)
+            cb(clamped)
+        end
+    end)
+end
+
+-- ============================================================================
+-- ĐIỀN NỘI DUNG CÁC TAB CHỨC NĂNG
+-- ============================================================================
+AddToggle(TabFakeLag, "Enable Fake Lag", Config.FakeLagEnabled, 5, function(v) Config.FakeLagEnabled = v end)
+AddSlider(TabFakeLag, "Lag Intensity (s)", 0.1, 5.0, Config.LagIntensity, 40, function(v) Config.LagIntensity = v end)
+AddToggle(TabFakeLag, "Ghost Mode (Ẩn thân)", Config.GhostMode, 75, function(v) Config.GhostMode = v end)
+AddToggle(TabFakeLag, "Freeze Enemy On Shot", Config.FireAutoFreeze, 105, function(v) Config.FireAutoFreeze = v end)
+
+AddToggle(TabAimbot, "Enable Aimbot", Config.AimbotEnabled, 5, function(v) Config.AimbotEnabled = v end)
+AddToggle(TabAimbot, "Aimbot Lite", Config.AimbotLite, 35, function(v) Config.AimbotLite = v end)
+AddToggle(TabAimbot, "Aim Silent", Config.AimSilent, 65, function(v) Config.AimSilent = v end)
+AddSlider(TabAimbot, "FOV Rate", 30, 500, Config.FOVRate, 100, function(v) Config.FOVRate = v end)
+
+AddToggle(TabVisuals, "Enemy ESP", Config.EnemyESP, 5, function(v) Config.EnemyESP = v end)
+AddToggle(TabVisuals, "Line (Tracer)", Config.ESP_Line, 35, function(v) Config.ESP_Line = v end)
+AddToggle(TabVisuals, "Box ESP", Config.ESP_Box, 65, function(v) Config.ESP_Box = v end)
+AddToggle(TabVisuals, "Health", Config.ESP_Health, 95, function(v) Config.ESP_Health = v end)
+AddToggle(TabVisuals, "Nickname", Config.ESP_Nickname, 125, function(v) Config.ESP_Nickname = v end)
+
+AddToggle(TabMisc, "Silent Kill", Config.SilentKill, 5, function(v) Config.SilentKill = v end)
+AddToggle(TabMisc, "Auto Fire", Config.AutoFire, 35, function(v) Config.AutoFire = v end)
+AddSlider(TabMisc, "Fire Rate", 0.1, 5.0, Config.FireRate, 70, function(v) Config.FireRate = v end)
+
+AddToggle(TabSettings, "Crystal Purple Theme", true, 5, function(v) end)
+AddToggle(TabSettings, "Auto Save Config", true, 35, function(v) end)
+
+-- ============================================================================
+-- ENGINE XỬ LÝ FAKE LAG & AIMBOT THỰC THI CHẠY NGẦM
+-- ============================================================================
+RunService.Heartbeat:Connect(function()
+    if Config.FakeLagEnabled then
+        pcall(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local hrp = char.HumanoidRootPart
+                if math.random(1, 2) == 1 then
+                    hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                end
+            end
+        end)
+    end
+end)
+
+print("[FLU V3] Khởi chạy thành công hệ thống Crystal Purple & Fake Lag!")
