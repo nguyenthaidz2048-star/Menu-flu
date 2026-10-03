@@ -1,0 +1,663 @@
+-- ============================================================================
+-- FLU V3 // FIXED & OPTIMIZED VERSION (THƯỜNG / VIP / TIỀN)
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Xóa UI cũ nếu tồn tại
+pcall(function()
+    if CoreGui:FindFirstChild("FluV3KeySystem") then CoreGui.FluV3KeySystem:Destroy() end
+    if CoreGui:FindFirstChild("FluV3Hub") then CoreGui.FluV3Hub:Destroy() end
+    if CoreGui:FindFirstChild("FluV3CrystalLogo") then CoreGui.FluV3CrystalLogo:Destroy() end
+end)
+
+local CurrentKeyTier = "None"
+
+local Config = {
+    AntiBan = true,
+    AntiKick = true,
+    FixLagMax = true,
+
+    -- Key Thường
+    AimbotEnabled = false,
+    AimSilentV2 = false,
+    TeamCheck = true,
+    ShowFOV = true,
+    LockCrosshairFOV = false,
+    FOVRate = 350,
+    AimSpeedMode = "Nhanh",
+    HitPartTarget = "Default",
+    EnemyESP = false,
+    ESP_Box = false,
+    ESP_Skeleton = false,
+    ESP_Line = false,
+    ESP_Nickname = false,
+    ESP_Health = false,
+    ESP_Distance = false,
+    ESP_HeadDot = false,
+    ESP_Color = Color3.fromRGB(180, 50, 255),
+
+    -- Key VIP
+    NoClip = false,
+    SpeedEnabled = false,
+    WalkSpeed = 25,
+    FastReload = false,
+    RapidFireEnabled = false,
+    BulletPerSecond = 15,
+    NoRecoil = false,
+    CamHighEnabled = false,
+    CamDistance = 30,
+
+    -- Key Tiền
+    KillAura700m = false,
+    HitboxExpander = false,
+    HitboxSize = 5,
+    FlyCamReal = false,
+    CharacterOrbit = false,
+    OrbitSpeed = 5.0,
+    GhostMode = false
+}
+
+-- ============================================================================
+-- 1. GIAO DIỆN NHẬP KEY
+-- ============================================================================
+local KeyGui = Instance.new("ScreenGui")
+KeyGui.Name = "FluV3KeySystem"
+KeyGui.Parent = CoreGui
+KeyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local KeyFrame = Instance.new("Frame")
+KeyFrame.Parent = KeyGui
+KeyFrame.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
+KeyFrame.BorderColor3 = Color3.fromRGB(140, 40, 255)
+KeyFrame.BorderSizePixel = 2
+KeyFrame.Position = UDim2.new(0.5, -175, 0.5, -110)
+KeyFrame.Size = UDim2.new(0, 350, 0, 220)
+KeyFrame.Active = true
+KeyFrame.Draggable = true
+Instance.new("UICorner", KeyFrame).CornerRadius = UDim.new(0, 10)
+
+local KeyTitle = Instance.new("TextLabel")
+KeyTitle.Parent = KeyFrame
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.Position = UDim2.new(0, 0, 0, 15)
+KeyTitle.Size = UDim2.new(1, 0, 0, 30)
+KeyTitle.Font = Enum.Font.GothamBold
+KeyTitle.Text = "💎 FLU V3 // HỆ THỐNG XÁC THỰC KEY"
+KeyTitle.TextColor3 = Color3.fromRGB(200, 100, 255)
+KeyTitle.TextSize = 13
+
+local KeyDesc = Instance.new("TextLabel")
+KeyDesc.Parent = KeyFrame
+KeyDesc.BackgroundTransparency = 1
+KeyDesc.Position = UDim2.new(0.05, 0, 0, 50)
+KeyDesc.Size = UDim2.new(0.9, 0, 0, 40)
+KeyDesc.Font = Enum.Font.Gotham
+KeyDesc.Text = "Nhập Key (thuong / vip / tien) để mở khóa tương ứng."
+KeyDesc.TextColor3 = Color3.fromRGB(180, 170, 200)
+KeyDesc.TextSize = 10
+KeyDesc.TextWrapped = true
+
+local KeyBox = Instance.new("TextBox")
+KeyBox.Parent = KeyFrame
+KeyBox.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+KeyBox.Position = UDim2.new(0.1, 0, 0, 100)
+KeyBox.Size = UDim2.new(0.8, 0, 0, 35)
+KeyBox.Font = Enum.Font.GothamBold
+KeyBox.PlaceholderText = "Nhập Key tại đây..."
+KeyBox.Text = ""
+KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyBox.PlaceholderColor3 = Color3.fromRGB(120, 110, 140)
+KeyBox.TextSize = 12
+Instance.new("UICorner", KeyBox).CornerRadius = UDim.new(0, 6)
+
+local SubmitBtn = Instance.new("TextButton")
+SubmitBtn.Parent = KeyFrame
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+SubmitBtn.Position = UDim2.new(0.1, 0, 0, 145)
+SubmitBtn.Size = UDim2.new(0.8, 0, 0, 35)
+SubmitBtn.Font = Enum.Font.GothamBold
+SubmitBtn.Text = "XÁC NHẬN KEY"
+SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.TextSize = 12
+Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 6)
+
+local StatusKey = Instance.new("TextLabel")
+StatusKey.Parent = KeyFrame
+StatusKey.BackgroundTransparency = 1
+StatusKey.Position = UDim2.new(0, 0, 0, 188)
+StatusKey.Size = UDim2.new(1, 0, 0, 20)
+StatusKey.Font = Enum.Font.GothamMedium
+StatusKey.Text = ""
+StatusKey.TextColor3 = Color3.fromRGB(255, 70, 70)
+StatusKey.TextSize = 10
+
+local LoadMainHub
+
+SubmitBtn.MouseButton1Click:Connect(function()
+    local inputKey = string.lower(string.gsub(KeyBox.Text, "%s+", ""))
+    if inputKey == "thuong" or inputKey == "keythuong" then
+        CurrentKeyTier = "Thuong"
+        KeyGui:Destroy()
+        LoadMainHub()
+    elseif inputKey == "vip" or inputKey == "keyvip" then
+        CurrentKeyTier = "VIP"
+        KeyGui:Destroy()
+        LoadMainHub()
+    elseif inputKey == "tien" or inputKey == "keytien" or inputKey == "admin" then
+        CurrentKeyTier = "Tien"
+        KeyGui:Destroy()
+        LoadMainHub()
+    else
+        StatusKey.Text = "❌ Key không hợp lệ!"
+    end
+end)
+
+-- ============================================================================
+-- 2. GIAO DIỆN CHÍNH (MAIN HUB)
+-- ============================================================================
+function LoadMainHub()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "FluV3Hub"
+    ScreenGui.Parent = CoreGui
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local LogoGui = Instance.new("ScreenGui")
+    LogoGui.Name = "FluV3CrystalLogo"
+    LogoGui.Parent = CoreGui
+    LogoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local FOVCircle = Drawing.new("Circle")
+    FOVCircle.Visible = false
+    FOVCircle.Thickness = 1.5
+    FOVCircle.NumSides = 60
+    FOVCircle.Radius = Config.FOVRate
+    FOVCircle.Color = Color3.fromRGB(180, 50, 255)
+    FOVCircle.Filled = false
+
+    local CrystalButton = Instance.new("TextButton")
+    CrystalButton.Parent = LogoGui
+    CrystalButton.BackgroundColor3 = Color3.fromRGB(35, 15, 60)
+    CrystalButton.BorderColor3 = Color3.fromRGB(180, 50, 255)
+    CrystalButton.BorderSizePixel = 2
+    CrystalButton.Position = UDim2.new(0, 20, 0.4, 0)
+    CrystalButton.Size = UDim2.new(0, 48, 0, 48)
+    CrystalButton.Font = Enum.Font.GothamBold
+    CrystalButton.Text = "💎"
+    CrystalButton.TextSize = 24
+    CrystalButton.Active = true
+    CrystalButton.Draggable = true
+    Instance.new("UICorner", CrystalButton).CornerRadius = UDim.new(1, 0)
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Parent = ScreenGui
+    MainFrame.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
+    MainFrame.BorderColor3 = Color3.fromRGB(140, 40, 255)
+    MainFrame.BorderSizePixel = 1
+    MainFrame.Position = UDim2.new(0.5, -230, 0.5, -170)
+    MainFrame.Size = UDim2.new(0, 460, 0, 340)
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+    local IsMenuOpen = true
+    CrystalButton.MouseButton1Click:Connect(function()
+        IsMenuOpen = not IsMenuOpen
+        MainFrame.Visible = IsMenuOpen
+    end)
+
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Parent = MainFrame
+    TitleBar.BackgroundColor3 = Color3.fromRGB(24, 20, 35)
+    TitleBar.Size = UDim2.new(1, 0, 0, 32)
+    Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
+
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Parent = TitleBar
+    TitleText.BackgroundTransparency = 1
+    TitleText.Position = UDim2.new(0, 12, 0, 0)
+    TitleText.Size = UDim2.new(1, -50, 1, 0)
+    TitleText.Font = Enum.Font.GothamBold
+    TitleText.Text = "💎 FLU V3 // TIER: [" .. string.upper(CurrentKeyTier) .. "]"
+    TitleText.TextColor3 = Color3.fromRGB(200, 100, 255)
+    TitleText.TextSize = 10
+    TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+    local CloseMenuBtn = Instance.new("TextButton")
+    CloseMenuBtn.Parent = TitleBar
+    CloseMenuBtn.BackgroundColor3 = Color3.fromRGB(50, 25, 75)
+    CloseMenuBtn.Position = UDim2.new(1, -32, 0, 5)
+    CloseMenuBtn.Size = UDim2.new(0, 24, 0, 22)
+    CloseMenuBtn.Font = Enum.Font.GothamBold
+    CloseMenuBtn.Text = "x"
+    CloseMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseMenuBtn.TextSize = 12
+    Instance.new("UICorner", CloseMenuBtn).CornerRadius = UDim.new(0, 4)
+
+    CloseMenuBtn.MouseButton1Click:Connect(function()
+        IsMenuOpen = false
+        MainFrame.Visible = false
+    end)
+
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Parent = MainFrame
+    Sidebar.BackgroundColor3 = Color3.fromRGB(12, 10, 16)
+    Sidebar.Position = UDim2.new(0, 0, 0, 32)
+    Sidebar.Size = UDim2.new(0, 115, 1, -32)
+
+    local TabContainer = Instance.new("Frame")
+    TabContainer.Parent = MainFrame
+    TabContainer.BackgroundTransparency = 1
+    TabContainer.Position = UDim2.new(0, 120, 0, 35)
+    TabContainer.Size = UDim2.new(1, -125, 1, -40)
+
+    local Tabs = {}
+    local TabButtons = {}
+
+    local function CreateTab(tabName, iconText)
+        local page = Instance.new("ScrollingFrame")
+        page.Parent = TabContainer
+        page.BackgroundTransparency = 1
+        page.Size = UDim2.new(1, 0, 1, 0)
+        page.CanvasSize = UDim2.new(0, 0, 3.2, 0)
+        page.ScrollBarThickness = 2
+        page.Visible = false
+
+        local btn = Instance.new("TextButton")
+        btn.Parent = Sidebar
+        btn.BackgroundColor3 = Color3.fromRGB(22, 18, 32)
+        btn.Size = UDim2.new(0.9, 0, 0, 28)
+        btn.Position = UDim2.new(0.05, 0, 0, (#TabButtons * 32) + 6)
+        btn.Font = Enum.Font.GothamBold
+        btn.Text = iconText .. " " .. tabName
+        btn.TextColor3 = Color3.fromRGB(160, 140, 190)
+        btn.TextSize = 10
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+        btn.MouseButton1Click:Connect(function()
+            for _, p in pairs(Tabs) do p.Visible = false end
+            for _, b in pairs(TabButtons) do 
+                b.BackgroundColor3 = Color3.fromRGB(22, 18, 32)
+                b.TextColor3 = Color3.fromRGB(160, 140, 190)
+            end
+            page.Visible = true
+            btn.BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end)
+
+        table.insert(TabButtons, btn)
+        Tabs[tabName] = page
+        return page
+    end
+
+    local TabCombat = CreateTab("Combat", "⚔️")
+    local TabVisuals = CreateTab("Visuals", "👁")
+    local TabMovement = CreateTab("Movements", "🚀")
+    local TabMisc = CreateTab("Misc", "⚙️")
+
+    Tabs["Combat"].Visible = true
+    TabButtons[1].BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+    TabButtons[1].TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    local function AddToggle(parent, text, defaultVal, yPos, requiredTier, cb)
+        local btn = Instance.new("TextButton")
+        btn.Parent = parent
+        btn.BackgroundColor3 = Color3.fromRGB(25, 21, 36)
+        btn.Position = UDim2.new(0.02, 0, 0, yPos)
+        btn.Size = UDim2.new(0.96, 0, 0, 26)
+        btn.Font = Enum.Font.GothamMedium
+        
+        local isUnlocked = true
+        local suffix = ""
+        if requiredTier == "VIP" and CurrentKeyTier == "Thuong" then
+            isUnlocked = false
+            suffix = " [🔒 Cần VIP]"
+        elseif requiredTier == "Tien" and (CurrentKeyTier == "Thuong" or CurrentKeyTier == "VIP") then
+            isUnlocked = false
+            suffix = " [🔒 Cần Tiền]"
+        end
+
+        btn.Text = "  " .. text .. suffix
+        btn.TextColor3 = isUnlocked and Color3.fromRGB(220, 210, 235) or Color3.fromRGB(100, 90, 110)
+        btn.TextSize = 10
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+        local stateLbl = Instance.new("TextLabel")
+        stateLbl.Parent = btn
+        stateLbl.BackgroundTransparency = 1
+        stateLbl.Position = UDim2.new(1, -55, 0, 0)
+        stateLbl.Size = UDim2.new(0, 50, 1, 0)
+        stateLbl.Font = Enum.Font.GothamBold
+        stateLbl.Text = defaultVal and "ON" or "OFF"
+        stateLbl.TextColor3 = defaultVal and Color3.fromRGB(150, 50, 255) or Color3.fromRGB(255, 70, 70)
+
+        local val = defaultVal
+        btn.MouseButton1Click:Connect(function()
+            if not isUnlocked then return end
+            val = not val
+            stateLbl.Text = val and "ON" or "OFF"
+            stateLbl.TextColor3 = val and Color3.fromRGB(150, 50, 255) or Color3.fromRGB(255, 70, 70)
+            cb(val)
+        end)
+    end
+
+    local function AddDropdown(parent, title, options, yPos, requiredTier, cb)
+        local lbl = Instance.new("TextLabel")
+        lbl.Parent = parent
+        lbl.BackgroundTransparency = 1
+        lbl.Position = UDim2.new(0.02, 0, 0, yPos)
+        lbl.Size = UDim2.new(0.96, 0, 0, 18)
+        lbl.Font = Enum.Font.GothamBold
+        
+        local isUnlocked = true
+        local suffix = ""
+        if requiredTier == "VIP" and CurrentKeyTier == "Thuong" then
+            isUnlocked = false
+            suffix = " [🔒 Khóa]"
+        elseif requiredTier == "Tien" and (CurrentKeyTier == "Thuong" or CurrentKeyTier == "VIP") then
+            isUnlocked = false
+            suffix = " [🔒 Khóa]"
+        end
+
+        lbl.Text = title .. ": [ " .. options[1] .. " ]" .. suffix
+        lbl.TextColor3 = isUnlocked and Color3.fromRGB(210, 130, 255) or Color3.fromRGB(100, 90, 110)
+        lbl.TextSize = 10
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+        local idx = 1
+        local btn = Instance.new("TextButton")
+        btn.Parent = parent
+        btn.BackgroundColor3 = Color3.fromRGB(32, 26, 46)
+        btn.Position = UDim2.new(0.02, 0, 0, yPos + 18)
+        btn.Size = UDim2.new(0.96, 0, 0, 22)
+        btn.Font = Enum.Font.GothamMedium
+        btn.Text = "Chạm để đổi lựa chọn"
+        btn.TextColor3 = Color3.fromRGB(230, 220, 240)
+        btn.TextSize = 9
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+        btn.MouseButton1Click:Connect(function()
+            if not isUnlocked then return end
+            idx = idx + 1
+            if idx > #options then idx = 1 end
+            lbl.Text = title .. ": [ " .. options[idx] .. " ]" .. suffix
+            cb(options[idx])
+        end)
+    end
+
+    local function AddSlider(parent, text, minVal, maxVal, defaultVal, yPos, requiredTier, cb)
+        local lbl = Instance.new("TextLabel")
+        lbl.Parent = parent
+        lbl.BackgroundTransparency = 1
+        lbl.Position = UDim2.new(0.02, 0, 0, yPos)
+        lbl.Size = UDim2.new(0.6, 0, 0, 24)
+        lbl.Font = Enum.Font.GothamMedium
+        
+        local isUnlocked = true
+        if requiredTier == "VIP" and CurrentKeyTier == "Thuong" then isUnlocked = false
+        elseif requiredTier == "Tien" and (CurrentKeyTier == "Thuong" or CurrentKeyTier == "VIP") then isUnlocked = false end
+
+        lbl.Text = "  " .. text
+        lbl.TextColor3 = isUnlocked and Color3.fromRGB(200, 190, 215) or Color3.fromRGB(100, 90, 110)
+        lbl.TextSize = 10
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+        local box = Instance.new("TextBox")
+        box.Parent = parent
+        box.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+        box.Position = UDim2.new(0.65, 0, 0, yPos)
+        box.Size = UDim2.new(0.33, 0, 0, 24)
+        box.Font = Enum.Font.GothamBold
+        box.Text = tostring(defaultVal)
+        box.TextColor3 = Color3.fromRGB(190, 100, 255)
+        box.TextSize = 10
+        Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+
+        box.FocusLost:Connect(function()
+            if not isUnlocked then return end
+            local n = tonumber(box.Text)
+            if n then
+                local clamped = math.clamp(n, minVal, maxVal)
+                box.Text = tostring(clamped)
+                cb(clamped)
+            end
+        end)
+    end
+
+    -- Tab Combat
+    AddToggle(TabCombat, "Aimbot Enable", Config.AimbotEnabled, 5, "Thuong", function(v) Config.AimbotEnabled = v end)
+    AddToggle(TabCombat, "Aim Silent V2", Config.AimSilentV2, 35, "Thuong", function(v) Config.AimSilentV2 = v end)
+    AddToggle(TabCombat, "Team Check", Config.TeamCheck, 65, "Thuong", function(v) Config.TeamCheck = v end)
+    AddToggle(TabCombat, "Show FOV Circle", Config.ShowFOV, 95, "Thuong", function(v) Config.ShowFOV = v end)
+    AddToggle(TabCombat, "Khóa vòng FOV giữa màn hình", Config.LockCrosshairFOV, 125, "Thuong", function(v) Config.LockCrosshairFOV = v end)
+    AddSlider(TabCombat, "FOV Size", 30, 500, Config.FOVRate, 155, "Thuong", function(v) Config.FOVRate = v; FOVCircle.Radius = v end)
+    AddDropdown(TabCombat, "Aim Speed", {"Nhanh", "Chậm", "Khóa tâm"}, 190, "Thuong", function(v) Config.AimSpeedMode = v end)
+    
+    AddToggle(TabCombat, "Kill Aura (700m)", Config.KillAura700m, 235, "Tien", function(v) Config.KillAura700m = v end)
+    AddToggle(TabCombat, "Hitbox Expander", Config.HitboxExpander, 265, "Tien", function(v) Config.HitboxExpander = v end)
+    AddSlider(TabCombat, "Hitbox Size", 2, 20, Config.HitboxSize, 295, "Tien", function(v) Config.HitboxSize = v end)
+    
+    AddToggle(TabCombat, "Rapid Fire (5-30v/s)", Config.RapidFireEnabled, 330, "VIP", function(v) Config.RapidFireEnabled = v end)
+    AddSlider(TabCombat, "Bullet / Sec", 5, 30, Config.BulletPerSecond, 360, "VIP", function(v) Config.BulletPerSecond = v end)
+    AddToggle(TabCombat, "No Recoil", Config.NoRecoil, 395, "VIP", function(v) Config.NoRecoil = v end)
+    AddDropdown(TabCombat, "Hit Part", {"Default", "Head", "Neck", "Stomach", "Normal"}, 430, "Thuong", function(v) Config.HitPartTarget = v end)
+
+    -- Tab Visuals
+    AddToggle(TabVisuals, "Enemy ESP", Config.EnemyESP, 5, "Thuong", function(v) Config.EnemyESP = v end)
+    AddToggle(TabVisuals, "Box ESP", Config.ESP_Box, 35, "Thuong", function(v) Config.ESP_Box = v end)
+    AddToggle(TabVisuals, "Skeleton ESP", Config.ESP_Skeleton, 65, "Thuong", function(v) Config.ESP_Skeleton = v end)
+    AddToggle(TabVisuals, "Line Tracer", Config.ESP_Line, 95, "Thuong", function(v) Config.ESP_Line = v end)
+    AddToggle(TabVisuals, "Nickname", Config.ESP_Nickname, 125, "Thuong", function(v) Config.ESP_Nickname = v end)
+    AddToggle(TabVisuals, "Health", Config.ESP_Health, 155, "Thuong", function(v) Config.ESP_Health = v end)
+    AddToggle(TabVisuals, "Distance", Config.ESP_Distance, 185, "Thuong", function(v) Config.ESP_Distance = v end)
+    AddToggle(TabVisuals, "Head Dot", Config.ESP_HeadDot, 215, "Thuong", function(v) Config.ESP_HeadDot = v end)
+    AddDropdown(TabVisuals, "ESP Color", {"Purple", "Cyan", "Red", "Green", "Gold"}, 250, "Thuong", function(v)
+        if v == "Purple" then Config.ESP_Color = Color3.fromRGB(180, 50, 255)
+        elseif v == "Cyan" then Config.ESP_Color = Color3.fromRGB(0, 220, 255)
+        elseif v == "Red" then Config.ESP_Color = Color3.fromRGB(255, 50, 50)
+        elseif v == "Green" then Config.ESP_Color = Color3.fromRGB(50, 255, 100)
+        elseif v == "Gold" then Config.ESP_Color = Color3.fromRGB(255, 215, 0) end
+    end)
+
+    -- Tab Movement
+    AddToggle(TabMovement, "NoClip", Config.NoClip, 5, "VIP", function(v) Config.NoClip = v end)
+    AddToggle(TabMovement, "Speed", Config.SpeedEnabled, 35, "VIP", function(v) Config.SpeedEnabled = v end)
+    AddSlider(TabMovement, "WalkSpeed Value", 16, 150, Config.WalkSpeed, 65, "VIP", function(v) Config.WalkSpeed = v end)
+    AddToggle(TabMovement, "Fast Reload", Config.FastReload, 100, "VIP", function(v) Config.FastReload = v end)
+    AddToggle(TabMovement, "Cam Cao", Config.CamHighEnabled, 135, "VIP", function(v) Config.CamHighEnabled = v end)
+    AddSlider(TabMovement, "Camera Distance", 10, 150, Config.CamDistance, 165, "VIP", function(v) Config.CamDistance = v end)
+    AddToggle(TabMovement, "Fly Cam Real", Config.FlyCamReal, 200, "Tien", function(v) Config.FlyCamReal = v end)
+    AddToggle(TabMovement, "Character Orbit", Config.CharacterOrbit, 235, "Tien", function(v) Config.CharacterOrbit = v end)
+    AddSlider(TabMovement, "Orbit Speed", 1.0, 20.0, Config.OrbitSpeed, 265, "Tien", function(v) Config.OrbitSpeed = v end)
+
+    -- Tab Misc
+    AddToggle(TabMisc, "Anti-Ban", Config.AntiBan, 5, "Thuong", function(v) Config.AntiBan = v end)
+    AddToggle(TabMisc, "Anti-Kick", Config.AntiKick, 35, "Thuong", function(v) Config.AntiKick = v end)
+    AddToggle(TabMisc, "Fix Lag Max", Config.FixLagMax, 65, "Thuong", function(v) Config.FixLagMax = v end)
+    AddToggle(TabMisc, "Ghost Mode", Config.GhostMode, 95, "Tien", function(v) Config.GhostMode = v end)
+
+    -- ========================================================================
+    -- LOGIC XỬ LÝ (RUNSERVICE) - ĐÃ SỬA LỖI ĐỂ TRÁNH CRASH
+    -- ========================================================================
+    local ESPRegistry = {}
+
+    local function IsEnemy(player)
+        if player == LocalPlayer then return false end
+        if not Config.TeamCheck then return true end
+        if player.Team and LocalPlayer.Team and player.Team == LocalPlayer.Team then return false end
+        return true
+    end
+
+    RunService.RenderStepped:Connect(function()
+        if Config.ShowFOV then
+            FOVCircle.Visible = true
+            if Config.LockCrosshairFOV then
+                FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+            else
+                FOVCircle.Position = UserInputService:GetMouseLocation()
+            end
+        else
+            FOVCircle.Visible = false
+        end
+
+        if Config.FixLagMax then
+            pcall(function()
+                settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+            end)
+        end
+
+        if Config.NoClip then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char then
+                    for _, p in pairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
+                end
+            end)
+        end
+
+        if Config.SpeedEnabled then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChildOfClass("Humanoid") then
+                    char.Humanoid.WalkSpeed = Config.WalkSpeed
+                end
+            end)
+        end
+
+        -- Rapid Fire & Fast Reload Fix
+        if Config.RapidFireEnabled then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                        task.wait(1 / Config.BulletPerSecond)
+                        tool:Activate()
+                    end
+                end
+            end)
+        end
+
+        if Config.FastReload then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        for _, v in pairs(tool:GetDescendants()) do
+                            if v:IsA("NumberValue") and (v.Name:lower():find("reload") or v.Name:lower():find("cooldown")) then
+                                v.Value = 0.05
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+
+        -- Aimbot & Ghost Mode Fix
+        if Config.AimbotEnabled or Config.AimSilentV2 or Config.GhostMode then
+            pcall(function()
+                local closestPart = nil
+                local referencePos = Config.LockCrosshairFOV and Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2) or UserInputService:GetMouseLocation()
+                local minDist = Config.FOVRate
+
+                for _, plr in ipairs(Players:GetPlayers()) do
+                    if IsEnemy(plr) and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+                        local part = plr.Character:FindFirstChild(Config.HitPartTarget ~= "Default" and Config.HitPartTarget or "Head")
+                        if part then
+                            local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                            if onScreen then
+                                local dist = (Vector2.new(screenPos.X, screenPos.Y) - referencePos).Magnitude
+                                if dist < minDist then
+                                    minDist = dist
+                                    closestPart = part
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if closestPart then
+                    if Config.AimbotEnabled or Config.GhostMode then
+                        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, closestPart.Position), 0.3)
+                    elseif Config.AimSilentV2 then
+                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, closestPart.Position)
+                    end
+                end
+            end)
+        end
+
+        -- ESP Rendering
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                local char = plr.Character
+                if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
+                    local hrp = char.HumanoidRootPart
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+
+                    if not ESPRegistry[plr] then
+                        ESPRegistry[plr] = {
+                            Box = Drawing.new("Square"),
+                            Name = Drawing.new("Text"),
+                            HP = Drawing.new("Text"),
+                            Tracer = Drawing.new("Line")
+                        }
+                        local d = ESPRegistry[plr]
+                        d.Box.Filled = false
+                        d.Name.Center = true
+                        d.Name.Size = 11
+                        d.HP.Center = true
+                        d.HP.Size = 10
+                    end
+
+                    local d = ESPRegistry[plr]
+                    local vector, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+                    if onScreen and hum.Health > 0 and Config.EnemyESP then
+                        local boxW = 1500 / vector.Z
+                        local boxH = 2600 / vector.Z
+                        local boxX = vector.X - boxW / 2
+                        local boxY = vector.Y - boxH / 2
+
+                        if Config.ESP_Box then
+                            d.Box.Visible = true
+                            d.Box.Color = Config.ESP_Color
+                            d.Box.Size = Vector2.new(boxW, boxH)
+                            d.Box.Position = Vector2.new(boxX, boxY)
+                        else d.Box.Visible = false end
+
+                        if Config.ESP_Nickname then
+                            d.Name.Visible = true
+                            d.Name.Text = plr.Name
+                            d.Name.Color = Config.ESP_Color
+                            d.Name.Position = Vector2.new(vector.X, boxY - 14)
+                        else d.Name.Visible = false end
+
+                        if Config.ESP_Health then
+                            d.HP.Visible = true
+                            d.HP.Text = "HP: " .. math.floor(hum.Health)
+                            d.HP.Color = Config.ESP_Color
+                            d.HP.Position = Vector2.new(vector.X, boxY + boxH + 2)
+                        else d.HP.Visible = false end
+
+                        if Config.ESP_Line then
+                            d.Tracer.Visible = true
+                            d.Tracer.Color = Config.ESP_Color
+                            d.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                            d.Tracer.To = Vector2.new(vector.X, vector.Y)
+                        else d.Tracer.Visible = false end
+                    else
+                        for _, obj in pairs(d) do obj.Visible = false end
+                    end
+                end
+            end
+        end
+    end)
+end
