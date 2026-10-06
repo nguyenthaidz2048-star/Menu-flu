@@ -1,0 +1,354 @@
+-- ============================================================================
+-- FLU V6.1 // ULTIMATE FREE FIRE GOD MODE & FULL FEATURES (NO LAG)
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local Stats = game:GetService("Stats")
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Xóa UI cũ tránh trùng lặp
+pcall(function()
+    if CoreGui:FindFirstChild("FluV3KeySystem") then CoreGui.FluV3KeySystem:Destroy() end
+    if CoreGui:FindFirstChild("FluV3Hub") then CoreGui.FluV3Hub:Destroy() end
+    if CoreGui:FindFirstChild("FluV3CrystalLogo") then CoreGui.FluV3CrystalLogo:Destroy() end
+    if CoreGui:FindFirstChild("FluV3InfoOverlay") then CoreGui.FluV3InfoOverlay:Destroy() end
+end)
+
+local SelectedTargetPlayer = "Tất cả (Mặc định)"
+
+local Config = {
+    AntiBan = true,
+    AntiKick = true,
+    FixLagMax = true,
+
+    -- Combat & Aim
+    AimbotEnabled = true,
+    AimSilentV2 = true,
+    AimFire = true,      
+    AimKill = true,      
+    NoScopeAim = true,   
+    TeamCheck = true,
+    ShowFOV = true,
+    LockCrosshairFOV = false,
+    FOVRate = 400,
+    AimSpeedMode = "Nhanh",
+    HitPartTarget = "Head",
+    
+    -- Visuals & ESP
+    EnemyESP = true,
+    Hologram3D_FF = true,       -- Hologram LED Neon chuẩn Free Fire
+    ESP_AntennaHead = true,      -- Antena đầu vút thẳng lên trời (độ dài vừa phải không che màn hình)
+    ESP_RainbowMode = true,      -- Đổi màu 7 màu liên tục
+    ESP_Color = Color3.fromRGB(0, 255, 100),
+
+    -- Weapon & Stat Buffs
+    SpeedEnabled = true,
+    WalkSpeed = 35,
+    FastReload = true,
+    InfiniteAmmo = true,
+    RapidFireEnabled = true,
+    BulletPerSecond = 30,
+    NoRecoil = true,
+
+    BuffDamageEnabled = true,
+    DamageMultiplier = 50,       -- Sát thương siêu khủng
+    BuffWeaponStats = true,      -- Max tốc độ, tầm bắn súng
+    SniperSpam = true,     
+    DualWieldAkimbo = true       -- Cầm 2 súng
+}
+
+local function GetDeviceType()
+    if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+        return "📱 Điện thoại (Mobile)"
+    else
+        return "💻 Máy tính (PC/Laptop)"
+    end
+end
+
+-- ============================================================================
+-- GIAO DIỆN CHÍNH & HỆ THỐNG XỬ LÝ FULL TÍNH NĂNG
+-- ============================================================================
+function LoadMainHub()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "FluV3Hub"
+    ScreenGui.Parent = CoreGui
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local LogoGui = Instance.new("ScreenGui")
+    LogoGui.Name = "FluV3CrystalLogo"
+    LogoGui.Parent = CoreGui
+    LogoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local OverlayGui = Instance.new("ScreenGui")
+    OverlayGui.Name = "FluV3InfoOverlay"
+    OverlayGui.Parent = CoreGui
+    OverlayGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local InfoBox = Instance.new("Frame")
+    InfoBox.Parent = OverlayGui
+    InfoBox.BackgroundColor3 = Color3.fromRGB(20, 16, 30)
+    InfoBox.BackgroundTransparency = 0.35
+    InfoBox.BorderColor3 = Color3.fromRGB(160, 50, 255)
+    InfoBox.BorderSizePixel = 1
+    InfoBox.Position = UDim2.new(0.5, -180, 0, 10)
+    InfoBox.Size = UDim2.new(0, 360, 0, 78)
+    Instance.new("UICorner", InfoBox).CornerRadius = UDim.new(0, 6)
+
+    local InfoText = Instance.new("TextLabel")
+    InfoText.Parent = InfoBox
+    InfoText.BackgroundTransparency = 1
+    InfoText.Position = UDim2.new(0, 12, 0, 4)
+    InfoText.Size = UDim2.new(1, -20, 1, 0)
+    InfoText.Font = Enum.Font.GothamBold
+    InfoText.TextSize = 10
+    InfoText.TextColor3 = Color3.fromRGB(0, 255, 100)
+    InfoText.TextXAlignment = Enum.TextXAlignment.Left
+
+    task.spawn(function()
+        while true do
+            pcall(function()
+                local enemyCount = 0
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                        if not Config.TeamCheck or not (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team) then
+                            enemyCount = enemyCount + 1
+                        end
+                    end
+                end
+                local fps = math.round(1 / RunService.RenderStepped:Wait())
+                local ping = math.round(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+                InfoText.Text = string.format("🔥 FLU V6.1 FULL POWER | Địch: [%d]\n⚡ FPS: %dfps | 🏓 Ping: %dms", enemyCount, fps, ping)
+            end)
+            task.wait(1)
+        end
+    end)
+
+    local FOVCircle = Drawing.new("Circle")
+    FOVCircle.Visible = true
+    FOVCircle.Thickness = 1.5
+    FOVCircle.NumSides = 60
+    FOVCircle.Radius = Config.FOVRate
+    FOVCircle.Color = Color3.fromRGB(0, 255, 100)
+    FOVCircle.Filled = false
+
+    local CrystalButton = Instance.new("TextButton")
+    CrystalButton.Parent = LogoGui
+    CrystalButton.BackgroundColor3 = Color3.fromRGB(35, 15, 60)
+    CrystalButton.BackgroundTransparency = 0.2
+    CrystalButton.BorderColor3 = Color3.fromRGB(180, 50, 255)
+    CrystalButton.BorderSizePixel = 2
+    CrystalButton.Position = UDim2.new(0, 20, 0.4, 0)
+    CrystalButton.Size = UDim2.new(0, 48, 0, 48)
+    CrystalButton.Font = Enum.Font.GothamBold
+    CrystalButton.Text = "💎"
+    CrystalButton.TextSize = 24
+    CrystalButton.Active = true
+    CrystalButton.Draggable = true
+    Instance.new("UICorner", CrystalButton).CornerRadius = UDim.new(1, 0)
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Parent = ScreenGui
+    MainFrame.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
+    MainFrame.BackgroundTransparency = 0.25
+    MainFrame.BorderColor3 = Color3.fromRGB(140, 40, 255)
+    MainFrame.BorderSizePixel = 1
+    MainFrame.Position = UDim2.new(0.5, -230, 0.5, -170)
+    MainFrame.Size = UDim2.new(0, 460, 0, 340)
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+    local IsMenuOpen = true
+    CrystalButton.MouseButton1Click:Connect(function()
+        IsMenuOpen = not IsMenuOpen
+        MainFrame.Visible = IsMenuOpen
+    end)
+
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Parent = MainFrame
+    TitleBar.BackgroundColor3 = Color3.fromRGB(24, 20, 35)
+    TitleBar.BackgroundTransparency = 0.2
+    TitleBar.Size = UDim2.new(1, 0, 0, 32)
+    Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
+
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Parent = TitleBar
+    TitleText.BackgroundTransparency = 1
+    TitleText.Position = UDim2.new(0, 12, 0, 0)
+    TitleText.Size = UDim2.new(1, -50, 1, 0)
+    TitleText.Font = Enum.Font.GothamBold
+    TitleText.Text = "💎 FLU V6.1 // FULL TÍNH NĂNG MƯỢT MÀ"
+    TitleText.TextColor3 = Color3.fromRGB(0, 255, 100)
+    TitleText.TextSize = 10
+    TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+    local CloseMenuBtn = Instance.new("TextButton")
+    CloseMenuBtn.Parent = TitleBar
+    CloseMenuBtn.BackgroundColor3 = Color3.fromRGB(50, 25, 75)
+    CloseMenuBtn.BackgroundTransparency = 0.2
+    CloseMenuBtn.Position = UDim2.new(1, -32, 0, 5)
+    CloseMenuBtn.Size = UDim2.new(0, 24, 0, 22)
+    CloseMenuBtn.Font = Enum.Font.GothamBold
+    CloseMenuBtn.Text = "x"
+    CloseMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseMenuBtn.TextSize = 12
+    Instance.new("UICorner", CloseMenuBtn).CornerRadius = UDim.new(0, 4)
+
+    CloseMenuBtn.MouseButton1Click:Connect(function()
+        IsMenuOpen = false
+        MainFrame.Visible = false
+    end)
+
+    -- Vòng lặp xử lý Súng & Buff Damage ngầm
+    task.spawn(function()
+        while true do
+            task.wait(0.1)
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        if Config.InfiniteAmmo then
+                            for _, v in pairs(tool:GetDescendants()) do
+                                if v:IsA("NumberValue") or v:IsA("IntValue") then
+                                    local nameLower = v.Name:lower()
+                                    if nameLower:find("ammo") or nameLower:find("clip") or nameLower:find("bul") then
+                                        v.Value = 999
+                                    end
+                                end
+                            end
+                        end
+
+                        if Config.SniperSpam or Config.BuffWeaponStats then
+                            for _, v in pairs(tool:GetDescendants()) do
+                                if v:IsA("NumberValue") or v:IsA("IntValue") then
+                                    local nameLower = v.Name:lower()
+                                    if nameLower:find("cooldown") or nameLower:find("firerate") or nameLower:find("reload") or nameLower:find("delay") or nameLower:find("spread") then
+                                        v.Value = 0.001
+                                    elseif nameLower:find("range") or nameLower:find("speed") or nameLower:find("damage") and Config.BuffWeaponStats then
+                                        v.Value = v.Value * Config.DamageMultiplier
+                                    end
+                                end
+                            end
+                        end
+
+                        if Config.BuffDamageEnabled then
+                            for _, v in pairs(tool:GetDescendants()) do
+                                if (v:IsA("NumberValue") or v:IsA("IntValue")) and v.Name:lower():find("damage") then
+                                    v.Value = 200 * Config.DamageMultiplier
+                                end
+                            end
+                        end
+
+                        if Config.DualWieldAkimbo then
+                            local handle = tool:FindFirstChild("Handle")
+                            if handle and not tool:FindFirstChild("AkimboCloneHandle") then
+                                local cloneHandle = handle:Clone()
+                                cloneHandle.Name = "AkimboCloneHandle"
+                                cloneHandle.Parent = tool
+                                cloneHandle.CFrame = handle.CFrame * CFrame.new(1.2, 0, 0)
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+
+    -- Vòng lặp Render chính cho ESP Hologram, Antena & Aimbot
+    RunService.RenderStepped:Connect(function()
+        local currentESPColor = Config.ESP_Color
+        if Config.ESP_RainbowMode then
+            currentESPColor = Color3.fromHSV((tick() * 0.5) % 1, 1, 1)
+        end
+
+        if Config.FixLagMax then
+            pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
+        end
+
+        if Config.SpeedEnabled then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChildOfClass("Humanoid") then
+                    char.Humanoid.WalkSpeed = Config.WalkSpeed
+                end
+            end)
+        end
+
+        -- Xử lý Antena Đầu & Hologram 3D Neon
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+                local char = plr.Character
+                local head = char:FindFirstChild("Head")
+                
+                if head and Config.ESP_AntennaHead then
+                    head.Size = Vector3.new(1.5, 12, 1.5) -- Antena vừa vặn, không che màn hình
+                    head.CanCollide = false
+                end
+
+                for _, part in pairs(char:GetChildren()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        local highlight = part:FindFirstChild("FFHologramGlow")
+                        if Config.Hologram3D_FF and Config.EnemyESP then
+                            if not highlight then
+                                highlight = Instance.new("SelectionBox")
+                                highlight.Name = "FFHologramGlow"
+                                highlight.Adornee = part
+                                highlight.Parent = part
+                            end
+                            highlight.Color3 = currentESPColor
+                            highlight.LineThickness = 0.05
+                            highlight.SurfaceTransparency = 0.5
+                            highlight.SurfaceColor3 = currentESPColor
+                        else
+                            if highlight then highlight:Destroy() end
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Aimbot & Khóa mục tiêu chuẩn xác
+        if Config.AimbotEnabled or Config.AimSilentV2 then
+            pcall(function()
+                local closestPart = nil
+                local referencePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                local minDist = Config.FOVRate
+
+                for _, plr in ipairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+                        local part = plr.Character:FindFirstChild(Config.HitPartTarget) or plr.Character:FindFirstChild("Head")
+                        if part then
+                            local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                            if onScreen then
+                                local dist = (Vector2.new(screenPos.X, screenPos.Y) - referencePos).Magnitude
+                                if dist < minDist then
+                                    minDist = dist
+                                    closestPart = part
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if closestPart then
+                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, closestPart.Position), 0.5)
+                    if Config.AimFire then
+                        local char = LocalPlayer.Character
+                        if char then
+                            local tool = char:FindFirstChildOfClass("Tool")
+                            if tool then tool:Activate() end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+LoadMainHub()
