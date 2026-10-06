@@ -1,0 +1,749 @@
+-- ============================================================================
+-- FLU V6.2 // GIỮ NGUYÊN BẢN GỐC FLU 5.7 + CHỈ THÊM HOLOGRAM XUYÊN TƯỜNG & ANTENA
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local Stats = game:GetService("Stats")
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Xóa UI cũ tránh bị trùng lặp
+pcall(function()
+    if CoreGui:FindFirstChild("FluV3KeySystem") then CoreGui.FluV3KeySystem:Destroy() end
+    if CoreGui:FindFirstChild("FluV3Hub") then CoreGui.FluV3Hub:Destroy() end
+    if CoreGui:FindFirstChild("FluV3CrystalLogo") then CoreGui.FluV3CrystalLogo:Destroy() end
+    if CoreGui:FindFirstChild("FluV3InfoOverlay") then CoreGui.FluV3InfoOverlay:Destroy() end
+end)
+
+local CurrentKeyTier = "None"
+local SelectedTargetPlayer = "Tất cả (Mặc định)"
+
+local Config = {
+    AntiBan = true,
+    AntiBanV2 = false,
+    AntiBanV3 = false,
+    FirewallV1 = false,
+    FirewallV2 = false,
+    FirewallV3 = false,
+    AntiKick = true,
+    FixLagMax = true,
+
+    -- Combat
+    AimbotEnabled = false,
+    AimSilentV2 = false,
+    AimFire = false,      
+    AimKill = false,      
+    NoScopeAim = false,   
+    TeamCheck = true,
+    ShowFOV = true,
+    LockCrosshairFOV = false,
+    FOVRate = 350,
+    AimSpeedMode = "Nhanh",
+    HitPartTarget = "Head",
+    
+    -- Visuals & ESP (Đã thêm Hologram xuyên tường chuẩn FF & Antena)
+    EnemyESP = false,
+    ESP_Box2D = false,
+    ESP_Box3D = false,
+    ESP_SkeletonFF = false,
+    ESP_Line = false,
+    ESP_Nickname = false,
+    ESP_Health = false,
+    ESP_Distance = false,
+    ESP_HeadDot = false,
+    ESP_Hologram3D = true,       -- Hologram 3D Neon nhìn xuyên tường
+    ESP_AntennaHead = true,      -- Antena đầu vút thẳng lên trời
+    ESP_RainbowMode = false, 
+    ESP_Color = Color3.fromRGB(0, 255, 100),
+
+    -- VIP / Tien / PC Equalizer
+    NoClip = false,
+    SpeedEnabled = false,
+    WalkSpeed = 25,
+    FastReload = false,
+    InfiniteAmmo = false,
+    RapidFireEnabled = false,
+    BulletPerSecond = 15,
+    NoRecoil = false,
+    CamHighEnabled = false,
+    CamDistance = 30,
+
+    KillAura700m = false,
+    HitboxExpander = false,
+    HitboxSize = 5,
+    FlyCamReal = false,
+    CharacterOrbit = false,
+    OrbitSpeed = 5.0,
+    GhostMode = false,
+    
+    -- Tính năng mới
+    BuffDamageEnabled = false,
+    DamageMultiplier = 10,
+    TeleportBehindEnemy = false,
+    UndergroundMode = false,
+    FlyMode = false,
+    FlySpeed = 50,
+    GhostTeleport = false,  
+    SniperSpam = false,     
+    DualWieldAkimbo = false 
+}
+
+local function GetDeviceType()
+    if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+        return "📱 Điện thoại (Mobile)"
+    elseif UserInputService.KeyboardEnabled and not UserInputService.TouchEnabled then
+        return "💻 Máy tính (PC/Laptop)"
+    else
+        return "🎮 Máy chơi game (Console)"
+    end
+end
+
+-- ============================================================================
+-- 1. GIAO DIỆN NHẬP KEY (GIỮ NGUYÊN BẢN GỐC)
+-- ============================================================================
+local KeyGui = Instance.new("ScreenGui")
+KeyGui.Name = "FluV3KeySystem"
+KeyGui.Parent = CoreGui
+KeyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local KeyFrame = Instance.new("Frame")
+KeyFrame.Parent = KeyGui
+KeyFrame.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
+KeyFrame.BackgroundTransparency = 0.25
+KeyFrame.BorderColor3 = Color3.fromRGB(140, 40, 255)
+KeyFrame.BorderSizePixel = 2
+KeyFrame.Position = UDim2.new(0.5, -175, 0.5, -110)
+KeyFrame.Size = UDim2.new(0, 350, 0, 220)
+KeyFrame.Active = true
+KeyFrame.Draggable = true
+Instance.new("UICorner", KeyFrame).CornerRadius = UDim.new(0, 10)
+
+local KeyTitle = Instance.new("TextLabel")
+KeyTitle.Parent = KeyFrame
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.Position = UDim2.new(0, 0, 0, 15)
+KeyTitle.Size = UDim2.new(1, 0, 0, 30)
+KeyTitle.Font = Enum.Font.GothamBold
+KeyTitle.Text = "💎 FLU V6.2 // HỆ THỐNG XÁC THỰC KEY"
+KeyTitle.TextColor3 = Color3.fromRGB(200, 100, 255)
+KeyTitle.TextSize = 13
+
+local KeyDesc = Instance.new("TextLabel")
+KeyDesc.Parent = KeyFrame
+KeyDesc.BackgroundTransparency = 1
+KeyDesc.Position = UDim2.new(0.05, 0, 0, 50)
+KeyDesc.Size = UDim2.new(0.9, 0, 0, 40)
+KeyDesc.Font = Enum.Font.Gotham
+KeyDesc.Text = "Nhập Key (thuong / vip / tien) để mở khóa tính năng tương ứng."
+KeyDesc.TextColor3 = Color3.fromRGB(180, 170, 200)
+KeyDesc.TextSize = 10
+KeyDesc.TextWrapped = true
+
+local KeyBox = Instance.new("TextBox")
+KeyBox.Parent = KeyFrame
+KeyBox.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+KeyBox.BackgroundTransparency = 0.3
+KeyBox.Position = UDim2.new(0.1, 0, 0, 100)
+KeyBox.Size = UDim2.new(0.8, 0, 0, 35)
+KeyBox.Font = Enum.Font.GothamBold
+KeyBox.PlaceholderText = "Nhập Key tại đây..."
+KeyBox.Text = ""
+KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyBox.PlaceholderColor3 = Color3.fromRGB(120, 110, 140)
+KeyBox.TextSize = 12
+Instance.new("UICorner", KeyBox).CornerRadius = UDim.new(0, 6)
+
+local SubmitBtn = Instance.new("TextButton")
+SubmitBtn.Parent = KeyFrame
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+SubmitBtn.BackgroundTransparency = 0.2
+SubmitBtn.Position = UDim2.new(0.1, 0, 0, 145)
+SubmitBtn.Size = UDim2.new(0.8, 0, 0, 35)
+SubmitBtn.Font = Enum.Font.GothamBold
+SubmitBtn.Text = "XÁC NHẬN KEY"
+SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.TextSize = 12
+Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 6)
+
+local StatusKey = Instance.new("TextLabel")
+StatusKey.Parent = KeyFrame
+StatusKey.BackgroundTransparency = 1
+StatusKey.Position = UDim2.new(0, 0, 0, 188)
+StatusKey.Size = UDim2.new(1, 0, 0, 20)
+StatusKey.Font = Enum.Font.GothamMedium
+StatusKey.Text = ""
+StatusKey.TextColor3 = Color3.fromRGB(255, 70, 70)
+StatusKey.TextSize = 10
+
+local LoadMainHub
+
+SubmitBtn.MouseButton1Click:Connect(function()
+    local inputKey = string.lower(string.gsub(KeyBox.Text, "%s+", ""))
+    if inputKey == "thuong" or inputKey == "keythuong" then
+        CurrentKeyTier = "Thuong"
+        KeyGui:Destroy()
+        LoadMainHub()
+    elseif inputKey == "vip" or inputKey == "keyvip" then
+        CurrentKeyTier = "VIP"
+        KeyGui:Destroy()
+        LoadMainHub()
+    elseif inputKey == "tien" or inputKey == "keytien" or inputKey == "admin" then
+        CurrentKeyTier = "Tien"
+        KeyGui:Destroy()
+        LoadMainHub()
+    else
+        StatusKey.Text = "❌ Key không hợp lệ!"
+    end
+end)
+
+-- ============================================================================
+-- 2. GIAO DIỆN CHÍNH & MENU BẤM (GIỮ NGUYÊN BẢN GỐC 5.7)
+-- ============================================================================
+function LoadMainHub()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "FluV3Hub"
+    ScreenGui.Parent = CoreGui
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local LogoGui = Instance.new("ScreenGui")
+    LogoGui.Name = "FluV3CrystalLogo"
+    LogoGui.Parent = CoreGui
+    LogoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local OverlayGui = Instance.new("ScreenGui")
+    OverlayGui.Name = "FluV3InfoOverlay"
+    OverlayGui.Parent = CoreGui
+    OverlayGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local InfoBox = Instance.new("Frame")
+    InfoBox.Parent = OverlayGui
+    InfoBox.BackgroundColor3 = Color3.fromRGB(20, 16, 30)
+    InfoBox.BackgroundTransparency = 0.35
+    InfoBox.BorderColor3 = Color3.fromRGB(160, 50, 255)
+    InfoBox.BorderSizePixel = 1
+    InfoBox.Position = UDim2.new(0.5, -180, 0, 10)
+    InfoBox.Size = UDim2.new(0, 360, 0, 78)
+    Instance.new("UICorner", InfoBox).CornerRadius = UDim.new(0, 6)
+
+    local AvatarImg = Instance.new("ImageLabel")
+    AvatarImg.Parent = InfoBox
+    AvatarImg.BackgroundColor3 = Color3.fromRGB(40, 30, 60)
+    AvatarImg.Position = UDim2.new(0, 6, 0, 6)
+    AvatarImg.Size = UDim2.new(0, 45, 0, 45)
+    Instance.new("UICorner", AvatarImg).CornerRadius = UDim.new(1, 0)
+    pcall(function()
+        local content, isReady = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+        if isReady then AvatarImg.Image = content end
+    end)
+
+    local InfoText = Instance.new("TextLabel")
+    InfoText.Parent = InfoBox
+    InfoText.BackgroundTransparency = 1
+    InfoText.Position = UDim2.new(0, 58, 0, 4)
+    InfoText.Size = UDim2.new(1, -62, 0, 50)
+    InfoText.Font = Enum.Font.GothamBold
+    InfoText.TextSize = 10
+    InfoText.TextColor3 = Color3.fromRGB(230, 210, 255)
+    InfoText.TextXAlignment = Enum.TextXAlignment.Left
+    InfoText.TextYAlignment = Enum.TextYAlignment.Top
+
+    local WarningLbl = Instance.new("TextLabel")
+    WarningLbl.Parent = InfoBox
+    WarningLbl.BackgroundTransparency = 1
+    WarningLbl.Position = UDim2.new(0, 6, 0, 54)
+    WarningLbl.Size = UDim2.new(1, -12, 0, 20)
+    WarningLbl.Font = Enum.Font.GothamBold
+    WarningLbl.Text = "⚠️ Đã khôi phục Menu gốc + ESP Xuyên Tường & Antena!"
+    WarningLbl.TextColor3 = Color3.fromRGB(0, 255, 100)
+    WarningLbl.TextSize = 8
+
+    task.spawn(function()
+        while true do
+            pcall(function()
+                local enemyCount = 0
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                        if not Config.TeamCheck or not (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team) then
+                            enemyCount = enemyCount + 1
+                        end
+                    end
+                end
+
+                local fps = math.round(1 / RunService.RenderStepped:Wait())
+                local ping = math.round(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+                local timeStr = os.date("%H:%M:%S")
+                local device = GetDeviceType()
+
+                InfoText.Text = string.format(
+                    "👤 Địch quanh bạn: [%d] | ⏰ TG: %s\n💻 Thiết bị: %s\n⚡ FPS: %idps | 🏓 Ping: %dms",
+                    enemyCount, timeStr, device, fps, ping
+                )
+            end)
+            task.wait(1)
+        end
+    end)
+
+    local FOVCircle = Drawing.new("Circle")
+    FOVCircle.Visible = false
+    FOVCircle.Thickness = 1.5
+    FOVCircle.NumSides = 60
+    FOVCircle.Radius = Config.FOVRate
+    FOVCircle.Color = Color3.fromRGB(180, 50, 255)
+    FOVCircle.Filled = false
+
+    local CrystalButton = Instance.new("TextButton")
+    CrystalButton.Parent = LogoGui
+    CrystalButton.BackgroundColor3 = Color3.fromRGB(35, 15, 60)
+    CrystalButton.BackgroundTransparency = 0.2
+    CrystalButton.BorderColor3 = Color3.fromRGB(180, 50, 255)
+    CrystalButton.BorderSizePixel = 2
+    CrystalButton.Position = UDim2.new(0, 20, 0.4, 0)
+    CrystalButton.Size = UDim2.new(0, 48, 0, 48)
+    CrystalButton.Font = Enum.Font.GothamBold
+    CrystalButton.Text = "💎"
+    CrystalButton.TextSize = 24
+    CrystalButton.Active = true
+    CrystalButton.Draggable = true
+    Instance.new("UICorner", CrystalButton).CornerRadius = UDim.new(1, 0)
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Parent = ScreenGui
+    MainFrame.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
+    MainFrame.BackgroundTransparency = 0.25
+    MainFrame.BorderColor3 = Color3.fromRGB(140, 40, 255)
+    MainFrame.BorderSizePixel = 1
+    MainFrame.Position = UDim2.new(0.5, -230, 0.5, -170)
+    MainFrame.Size = UDim2.new(0, 460, 0, 340)
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+    local IsMenuOpen = true
+    CrystalButton.MouseButton1Click:Connect(function()
+        IsMenuOpen = not IsMenuOpen
+        MainFrame.Visible = IsMenuOpen
+    end)
+
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Parent = MainFrame
+    TitleBar.BackgroundColor3 = Color3.fromRGB(24, 20, 35)
+    TitleBar.BackgroundTransparency = 0.2
+    TitleBar.Size = UDim2.new(1, 0, 0, 32)
+    Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
+
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Parent = TitleBar
+    TitleText.BackgroundTransparency = 1
+    TitleText.Position = UDim2.new(0, 12, 0, 0)
+    TitleText.Size = UDim2.new(1, -50, 1, 0)
+    TitleText.Font = Enum.Font.GothamBold
+    TitleText.Text = "💎 FLU V6.2 // TIER: [" .. string.upper(CurrentKeyTier) .. "]"
+    TitleText.TextColor3 = Color3.fromRGB(200, 100, 255)
+    TitleText.TextSize = 10
+    TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+    local CloseMenuBtn = Instance.new("TextButton")
+    CloseMenuBtn.Parent = TitleBar
+    CloseMenuBtn.BackgroundColor3 = Color3.fromRGB(50, 25, 75)
+    CloseMenuBtn.BackgroundTransparency = 0.2
+    CloseMenuBtn.Position = UDim2.new(1, -32, 0, 5)
+    CloseMenuBtn.Size = UDim2.new(0, 24, 0, 22)
+    CloseMenuBtn.Font = Enum.Font.GothamBold
+    CloseMenuBtn.Text = "x"
+    CloseMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseMenuBtn.TextSize = 12
+    Instance.new("UICorner", CloseMenuBtn).CornerRadius = UDim.new(0, 4)
+
+    CloseMenuBtn.MouseButton1Click:Connect(function()
+        IsMenuOpen = false
+        MainFrame.Visible = false
+    end)
+
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Parent = MainFrame
+    Sidebar.BackgroundColor3 = Color3.fromRGB(12, 10, 16)
+    Sidebar.BackgroundTransparency = 0.3
+    Sidebar.Position = UDim2.new(0, 0, 0, 32)
+    Sidebar.Size = UDim2.new(0, 115, 1, -32)
+
+    local TabContainer = Instance.new("Frame")
+    TabContainer.Parent = MainFrame
+    TabContainer.BackgroundTransparency = 1
+    TabContainer.Position = UDim2.new(0, 120, 0, 35)
+    TabContainer.Size = UDim2.new(1, -125, 1, -40)
+
+    local Tabs = {}
+    local TabButtons = {}
+
+    local function CreateTab(tabName, iconText)
+        local page = Instance.new("ScrollingFrame")
+        page.Parent = TabContainer
+        page.BackgroundTransparency = 1
+        page.Size = UDim2.new(1, 0, 1, 0)
+        page.CanvasSize = UDim2.new(0, 0, 5.5, 0)
+        page.ScrollBarThickness = 2
+        page.Visible = false
+
+        local btn = Instance.new("TextButton")
+        btn.Parent = Sidebar
+        btn.BackgroundColor3 = Color3.fromRGB(22, 18, 32)
+        btn.BackgroundTransparency = 0.2
+        btn.Size = UDim2.new(0.9, 0, 0, 28)
+        btn.Position = UDim2.new(0.05, 0, 0, (#TabButtons * 32) + 6)
+        btn.Font = Enum.Font.GothamBold
+        btn.Text = iconText .. " " .. tabName
+        btn.TextColor3 = Color3.fromRGB(160, 140, 190)
+        btn.TextSize = 10
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+        btn.MouseButton1Click:Connect(function()
+            for _, p in pairs(Tabs) do p.Visible = false end
+            for _, b in pairs(TabButtons) do 
+                b.BackgroundColor3 = Color3.fromRGB(22, 18, 32)
+                b.TextColor3 = Color3.fromRGB(160, 140, 190)
+            end
+            page.Visible = true
+            btn.BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end)
+
+        table.insert(TabButtons, btn)
+        Tabs[tabName] = page
+        return page
+    end
+
+    local TabCombat = CreateTab("Combat", "⚔️")
+    local TabVisuals = CreateTab("Visuals", "👁")
+    local TabMovement = CreateTab("Movements", "🚀")
+    local TabMisc = CreateTab("Misc", "⚙️")
+
+    Tabs["Combat"].Visible = true
+    TabButtons[1].BackgroundColor3 = Color3.fromRGB(130, 30, 220)
+    TabButtons[1].TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    local function AddToggle(parent, text, defaultVal, yPos, requiredTier, cb)
+        local btn = Instance.new("TextButton")
+        btn.Parent = parent
+        btn.BackgroundColor3 = Color3.fromRGB(25, 21, 36)
+        btn.BackgroundTransparency = 0.3
+        btn.Position = UDim2.new(0.02, 0, 0, yPos)
+        btn.Size = UDim2.new(0.96, 0, 0, 26)
+        btn.Font = Enum.Font.GothamMedium
+        
+        local isUnlocked = true
+        local suffix = ""
+        if requiredTier == "VIP" and CurrentKeyTier == "Thuong" then
+            isUnlocked = false
+            suffix = " [🔒 Cần VIP]"
+        elseif requiredTier == "Tien" and (CurrentKeyTier == "Thuong" or CurrentKeyTier == "VIP") then
+            isUnlocked = false
+            suffix = " [🔒 Cần Tiền]"
+        end
+
+        btn.Text = "  " .. text .. suffix
+        btn.TextColor3 = isUnlocked and Color3.fromRGB(220, 210, 235) or Color3.fromRGB(100, 90, 110)
+        btn.TextSize = 10
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+        local stateLbl = Instance.new("TextLabel")
+        stateLbl.Parent = btn
+        stateLbl.BackgroundTransparency = 1
+        stateLbl.Position = UDim2.new(1, -55, 0, 0)
+        stateLbl.Size = UDim2.new(0, 50, 1, 0)
+        stateLbl.Font = Enum.Font.GothamBold
+        stateLbl.Text = defaultVal and "ON" or "OFF"
+        stateLbl.TextColor3 = defaultVal and Color3.fromRGB(150, 50, 255) or Color3.fromRGB(255, 70, 70)
+
+        local val = defaultVal
+        btn.MouseButton1Click:Connect(function()
+            if not isUnlocked then return end
+            val = not val
+            stateLbl.Text = val and "ON" or "OFF"
+            stateLbl.TextColor3 = val and Color3.fromRGB(150, 50, 255) or Color3.fromRGB(255, 70, 70)
+            cb(val)
+        end)
+    end
+
+    local function AddDropdown(parent, title, options, yPos, requiredTier, cb)
+        local lbl = Instance.new("TextLabel")
+        lbl.Parent = parent
+        lbl.BackgroundTransparency = 1
+        lbl.Position = UDim2.new(0.02, 0, 0, yPos)
+        lbl.Size = UDim2.new(0.96, 0, 0, 18)
+        lbl.Font = Enum.Font.GothamBold
+        
+        local isUnlocked = true
+        local suffix = ""
+        if requiredTier == "VIP" and CurrentKeyTier == "Thuong" then
+            isUnlocked = false
+            suffix = " [🔒 Khóa]"
+        elseif requiredTier == "Tien" and (CurrentKeyTier == "Thuong" or CurrentKeyTier == "VIP") then
+            isUnlocked = false
+            suffix = " [🔒 Khóa]"
+        end
+
+        lbl.Text = title .. ": [ " .. options[1] .. " ]" .. suffix
+        lbl.TextColor3 = isUnlocked and Color3.fromRGB(210, 130, 255) or Color3.fromRGB(100, 90, 110)
+        lbl.TextSize = 10
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+        local idx = 1
+        local btn = Instance.new("TextButton")
+        btn.Parent = parent
+        btn.BackgroundColor3 = Color3.fromRGB(32, 26, 46)
+        btn.BackgroundTransparency = 0.3
+        btn.Position = UDim2.new(0.02, 0, 0, yPos + 18)
+        btn.Size = UDim2.new(0.96, 0, 0, 22)
+        btn.Font = Enum.Font.GothamMedium
+        btn.Text = "Chạm để đổi lựa chọn"
+        btn.TextColor3 = Color3.fromRGB(230, 220, 240)
+        btn.TextSize = 9
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+        btn.MouseButton1Click:Connect(function()
+            if not isUnlocked then return end
+            idx = idx + 1
+            if idx > #options then idx = 1 end
+            lbl.Text = title .. ": [ " .. options[idx] .. " ]" .. suffix
+            cb(options[idx])
+        end)
+    end
+
+    local function AddSlider(parent, text, minVal, maxVal, defaultVal, yPos, requiredTier, cb)
+        local lbl = Instance.new("TextLabel")
+        lbl.Parent = parent
+        lbl.BackgroundTransparency = 1
+        lbl.Position = UDim2.new(0.02, 0, 0, yPos)
+        lbl.Size = UDim2.new(0.6, 0, 0, 24)
+        lbl.Font = Enum.Font.GothamMedium
+        
+        local isUnlocked = true
+        if requiredTier == "VIP" and CurrentKeyTier == "Thuong" then isUnlocked = false
+        elseif requiredTier == "Tien" and (CurrentKeyTier == "Thuong" or CurrentKeyTier == "VIP") then isUnlocked = false end
+
+        lbl.Text = "  " .. text
+        lbl.TextColor3 = isUnlocked and Color3.fromRGB(200, 190, 215) or Color3.fromRGB(100, 90, 110)
+        lbl.TextSize = 10
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+        local box = Instance.new("TextBox")
+        box.Parent = parent
+        box.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+        box.BackgroundTransparency = 0.3
+        box.Position = UDim2.new(0.65, 0, 0, yPos)
+        box.Size = UDim2.new(0.33, 0, 0, 24)
+        box.Font = Enum.Font.GothamBold
+        box.Text = tostring(defaultVal)
+        box.TextColor3 = Color3.fromRGB(190, 100, 255)
+        box.TextSize = 10
+        Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+
+        box.FocusLost:Connect(function()
+            if not isUnlocked then return end
+            local n = tonumber(box.Text)
+            if n then
+                local clamped = math.clamp(n, minVal, maxVal)
+                box.Text = tostring(clamped)
+                cb(clamped)
+            end
+        end)
+    end
+
+    local playerList = {"Tất cả (Mặc định)"}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(playerList, p.Name) end
+    end
+
+    -- Đầy đủ các Tab Combat gốc 5.7
+    AddToggle(TabCombat, "Aimbot Enable", Config.AimbotEnabled, 5, "Thuong", function(v) Config.AimbotEnabled = v end)
+    AddToggle(TabCombat, "Aim Silent V2", Config.AimSilentV2, 35, "Thuong", function(v) Config.AimSilentV2 = v end)
+    AddToggle(TabCombat, "No-Scope Aim", Config.NoScopeAim, 65, "Thuong", function(v) Config.NoScopeAim = v end)
+    AddToggle(TabCombat, "Aim Fire", Config.AimFire, 95, "Thuong", function(v) Config.AimFire = v end)
+    AddToggle(TabCombat, "Aim Kill", Config.AimKill, 125, "Thuong", function(v) Config.AimKill = v end)
+    AddToggle(TabCombat, "Team Check", Config.TeamCheck, 155, "Thuong", function(v) Config.TeamCheck = v end)
+    AddToggle(TabCombat, "Show FOV Circle", Config.ShowFOV, 185, "Thuong", function(v) Config.ShowFOV = v end)
+    AddToggle(TabCombat, "Khóa vòng FOV giữa", Config.LockCrosshairFOV, 215, "Thuong", function(v) Config.LockCrosshairFOV = v end)
+    AddSlider(TabCombat, "FOV Size", 30, 500, Config.FOVRate, 245, "Thuong", function(v) Config.FOVRate = v; FOVCircle.Radius = v end)
+    AddDropdown(TabCombat, "Aim Speed", {"Nhanh", "Chậm", "Khóa tâm"}, 280, "Thuong", function(v) Config.AimSpeedMode = v end)
+    AddDropdown(TabCombat, "Chọn mục tiêu", playerList, 325, "Thuong", function(v) SelectedTargetPlayer = v end)
+    
+    AddToggle(TabCombat, "Kill Aura (700m)", Config.KillAura700m, 370, "Tien", function(v) Config.KillAura700m = v end)
+    AddToggle(TabCombat, "Hitbox Expander", Config.HitboxExpander, 400, "Tien", function(v) Config.HitboxExpander = v end)
+    AddSlider(TabCombat, "Hitbox Size", 2, 20, Config.HitboxSize, 430, "Tien", function(v) Config.HitboxSize = v end)
+    AddToggle(TabCombat, "Rapid Fire", Config.RapidFireEnabled, 465, "VIP", function(v) Config.RapidFireEnabled = v end)
+    AddSlider(TabCombat, "Bullet / Sec", 5, 30, Config.BulletPerSecond, 495, "VIP", function(v) Config.BulletPerSecond = v end)
+    AddToggle(TabCombat, "Sniper Spam", Config.SniperSpam, 530, "Tien", function(v) Config.SniperSpam = v end)
+    AddToggle(TabCombat, "No Recoil", Config.NoRecoil, 565, "VIP", function(v) Config.NoRecoil = v end)
+    AddDropdown(TabCombat, "Hit Part", {"Default", "Head", "Neck", "Stomach", "Normal"}, 600, "Thuong", function(v) Config.HitPartTarget = v end)
+
+    -- Đầy đủ các Tab Visuals gốc + Thêm Hologram Xuyên Tường & Antena
+    AddToggle(TabVisuals, "Enemy ESP (Bật gốc)", Config.EnemyESP, 5, "Thuong", function(v) Config.EnemyESP = v end)
+    AddToggle(TabVisuals, "🔥 Hologram 3D Xuyên Tường", Config.Hologram3D_FF, 35, "Thuong", function(v) Config.Hologram3D_FF = v end)
+    AddToggle(TabVisuals, "📡 Antenna Đầu (Vút thẳng lên trời)", Config.ESP_AntennaHead, 65, "Tien", function(v) Config.ESP_AntennaHead = v end)
+    AddToggle(TabVisuals, "Box 2D ESP", Config.ESP_Box2D, 95, "Thuong", function(v) Config.ESP_Box2D = v end)
+    AddToggle(TabVisuals, "Box 3D ESP", Config.ESP_Box3D, 125, "Thuong", function(v) Config.ESP_Box3D = v end)
+    AddToggle(TabVisuals, "Skeleton ESP", Config.ESP_SkeletonFF, 155, "Thuong", function(v) Config.ESP_SkeletonFF = v end)
+    AddToggle(TabVisuals, "Line Tracer", Config.ESP_Line, 185, "Thuong", function(v) Config.ESP_Line = v end)
+    AddToggle(TabVisuals, "Nickname", Config.ESP_Nickname, 215, "Thuong", function(v) Config.ESP_Nickname = v end)
+    AddToggle(TabVisuals, "Health", Config.ESP_Health, 245, "Thuong", function(v) Config.ESP_Health = v end)
+    AddToggle(TabVisuals, "Distance", Config.ESP_Distance, 275, "Thuong", function(v) Config.ESP_Distance = v end)
+    AddToggle(TabVisuals, "Head Dot", Config.ESP_HeadDot, 305, "Thuong", function(v) Config.ESP_HeadDot = v end)
+    AddToggle(TabVisuals, "🌈 Rainbow Mode", Config.ESP_RainbowMode, 335, "VIP", function(v) Config.ESP_RainbowMode = v end)
+    AddDropdown(TabVisuals, "ESP Color", {"Purple", "Cyan", "Red", "Green", "Gold"}, 370, "Thuong", function(v)
+        if v == "Purple" then Config.ESP_Color = Color3.fromRGB(180, 50, 255)
+        elseif v == "Cyan" then Config.ESP_Color = Color3.fromRGB(0, 220, 255)
+        elseif v == "Red" then Config.ESP_Color = Color3.fromRGB(255, 50, 50)
+        elseif v == "Green" then Config.ESP_Color = Color3.fromRGB(50, 255, 100)
+        elseif v == "Gold" then Config.ESP_Color = Color3.fromRGB(255, 215, 0) end
+    end)
+
+    -- Tab Movement & Buffs gốc + Buff Damage
+    AddToggle(TabMovement, "NoClip", Config.NoClip, 5, "VIP", function(v) Config.NoClip = v end)
+    AddToggle(TabMovement, "Speed", Config.SpeedEnabled, 35, "VIP", function(v) Config.SpeedEnabled = v end)
+    AddSlider(TabMovement, "WalkSpeed Value", 16, 150, Config.WalkSpeed, 65, "VIP", function(v) Config.WalkSpeed = v end)
+    AddToggle(TabMovement, "Fast Reload", Config.FastReload, 100, "VIP", function(v) Config.FastReload = v end)
+    AddToggle(TabMovement, "Infinite Ammo", Config.InfiniteAmmo, 135, "VIP", function(v) Config.InfiniteAmmo = v end)
+    AddToggle(TabMovement, "💥 Buff Damage Súng", Config.BuffDamageEnabled, 170, "Tien", function(v) Config.BuffDamageEnabled = v end)
+    AddSlider(TabMovement, "Damage Multiplier", 2, 50, Config.DamageMultiplier, 200, "Tien", function(v) Config.DamageMultiplier = v end)
+    AddToggle(TabMovement, "🔫 Akimbo Dual", Config.DualWieldAkimbo, 235, "Tien", function(v) Config.DualWieldAkimbo = v end)
+    AddToggle(TabMovement, "Fly Mode", Config.FlyMode, 270, "Tien", function(v) Config.FlyMode = v end)
+    AddSlider(TabMovement, "Fly Speed", 20, 200, Config.FlySpeed, 300, "Tien", function(v) Config.FlySpeed = v end)
+    AddToggle(TabMovement, "Underground", Config.UndergroundMode, 335, "Tien", function(v) Config.UndergroundMode = v end)
+    AddToggle(TabMovement, "Teleport Behind", Config.TeleportBehindEnemy, 370, "Tien", function(v) Config.TeleportBehindEnemy = v end)
+    AddToggle(TabMovement, "Ghost Teleport", Config.GhostTeleport, 405, "Tien", function(v) Config.GhostTeleport = v end)
+
+    -- Tab Misc gốc
+    AddToggle(TabMisc, "Anti-Ban", Config.AntiBan, 5, "Thuong", function(v) Config.AntiBan = v end)
+    AddToggle(TabMisc, "Anti-Ban V2", Config.AntiBanV2, 35, "VIP", function(v) Config.AntiBanV2 = v end)
+    AddToggle(TabMisc, "Anti-Ban V3", Config.AntiBanV3, 65, "Tien", function(v) Config.AntiBanV3 = v end)
+    AddToggle(TabMisc, "Tường Lửa V1", Config.FirewallV1, 95, "Thuong", function(v) Config.FirewallV1 = v end)
+    AddToggle(TabMisc, "Tường Lửa V2", Config.FirewallV2, 125, "VIP", function(v) Config.FirewallV2 = v end)
+    AddToggle(TabMisc, "Tường Lửa V3", Config.FirewallV3, 155, "Tien", function(v) Config.FirewallV3 = v end)
+    AddToggle(TabMisc, "Anti-Kick", Config.AntiKick, 185, "Thuong", function(v) Config.AntiKick = v end)
+    AddToggle(TabMisc, "Fix Lag Max", Config.FixLagMax, 215, "Thuong", function(v) Config.FixLagMax = v end)
+    AddToggle(TabMisc, "Ghost Mode", Config.GhostMode, 245, "Tien", function(v) Config.GhostMode = v end)
+
+    -- ========================================================================
+    -- LOGIC XỬ LÝ (GIỮ NGUYÊN GỐC + HOLOGRAM XUYÊN TƯỜNG ALWAYS ON TOP)
+    -- ========================================================================
+    local ESPRegistry = {}
+
+    local function IsEnemy(player)
+        if player == LocalPlayer then return false end
+        if SelectedTargetPlayer ~= "Tất cả (Mặc định)" and player.Name ~= SelectedTargetPlayer then return false end
+        if not Config.TeamCheck then return true end
+        if player.Team and LocalPlayer.Team and player.Team == LocalPlayer.Team then return false end
+        return true
+    end
+
+    -- Vòng lặp Súng & Buff Damage ngầm
+    task.spawn(function()
+        while true do
+            task.wait(0.1)
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        if Config.InfiniteAmmo then
+                            for _, v in pairs(tool:GetDescendants()) do
+                                if v:IsA("NumberValue") or v:IsA("IntValue") then
+                                    local nameLower = v.Name:lower()
+                                    if nameLower:find("ammo") or nameLower:find("clip") or nameLower:find("bul") then
+                                        v.Value = 999
+                                    end
+                                end
+                            end
+                        end
+
+                        if Config.BuffDamageEnabled then
+                            for _, v in pairs(tool:GetDescendants()) do
+                                if (v:IsA("NumberValue") or v:IsA("IntValue")) and v.Name:lower():find("damage") then
+                                    v.Value = 100 * Config.DamageMultiplier
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+
+    RunService.RenderStepped:Connect(function()
+        local currentESPColor = Config.ESP_Color
+        if Config.ESP_RainbowMode then
+            currentESPColor = Color3.fromHSV((tick() * 2) % 1, 1, 1)
+        end
+
+        if Config.FixLagMax then
+            pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
+        end
+
+        -- Xử lý Hologram Xuyên Tường & Antena cho địch
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+                local char = plr.Character
+                local head = char:FindFirstChild("Head")
+
+                if head and Config.ESP_AntennaHead then
+                    head.Size = Vector3.new(1.5, 12, 1.5)
+                    head.CanCollide = false
+                end
+
+                for _, part in pairs(char:GetChildren()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        local highlight = part:FindFirstChild("FFHologramGlow")
+                        if Config.Hologram3D_FF and Config.EnemyESP then
+                            if not highlight then
+                                highlight = Instance.new("Highlight") -- Dùng Highlight để xuyên tường chuẩn Roblox
+                                highlight.Name = "FFHologramGlow"
+                                highlight.Adornee = char
+                                highlight.Parent = char
+                                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Xuyên mọi vật cản
+                            end
+                            highlight.FillColor = currentESPColor
+                            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                            highlight.FillTransparency = 0.4
+                        else
+                            if highlight then highlight:Destroy() end
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Aimbot gốc 5.7
+        if Config.AimbotEnabled or Config.AimSilentV2 then
+            pcall(function()
+                local closestPart = nil
+                local referencePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                local minDist = Config.FOVRate
+
+                for _, plr in ipairs(Players:GetPlayers()) do
+                    if IsEnemy(plr) and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+                        local part = plr.Character:FindFirstChild(Config.HitPartTarget ~= "Default" and Config.HitPartTarget or "Head")
+                        if part then
+                            local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                            if onScreen then
+                                local dist = (Vector2.new(screenPos.X, screenPos.Y) - referencePos).Magnitude
+                                if dist < minDist then
+                                    minDist = dist
+                                    closestPart = part
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if closestPart then
+                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, closestPart.Position), 0.3)
+                end
+            end)
+        end
+    end)
+end
